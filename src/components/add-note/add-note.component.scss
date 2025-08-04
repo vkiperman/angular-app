@@ -1,0 +1,35 @@
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.closer {
+  cursor: pointer;
+  color: hwb(211 0% 0%);
+  background-color: transparent;
+  border: none;
+  font-size: 1.2rem;
+  transition: color 0.3s;
+
+  &:hover {
+    color: hwb(211 0% 40%);
+  }
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+textarea {
+  width: 300px;
+  height: 100px;
+}

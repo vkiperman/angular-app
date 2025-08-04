@@ -1,0 +1,78 @@
+<div class="container">
+  <div class="header">
+    <button (click)="prevMonth()">←</button>
+    <h2>{{ dateLocaleString() }}</h2>
+    <button (click)="gotoToday()">Today</button>
+    <button (click)="nextMonth()">→</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th
+          *ngFor="let day of getWeekdayNames()"
+          [class]="{ today: day.isToday }"
+        >
+          {{ day.name }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let week of selectedMonth()">
+        <td
+          *ngFor="let day of week"
+          [class]="{
+            'other-month': !day.currentMonth,
+            today: day.isToday,
+          }"
+          [style.cursor]="day.isInThePast ? 'not-allowed' : 'pointer'"
+          (click)="day.isInThePast || showAddNoteModal($event, null, day.date)"
+        >
+          {{ day.date | date: "d" }}
+          <div class="past" *ngIf="day.isInThePast"></div>
+          <ul class="notes">
+            @for (note of storedNotes(); track note.id) {
+              @if ((note.date | date) === (day.date | date)) {
+                <li (click)="showAddNoteModal($event, note)">
+                  <span class="note-title">{{ note.title }}</span>
+                  <button
+                    class="note-remove"
+                    (click)="showRemoveNoteDialog($event, note)"
+                  >
+                    ×
+                  </button>
+                </li>
+              }
+            }
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<dialog #addNoteModal>
+  <add-note (added)="closeAddNoteModal()" [note]="pendingNote()">
+    <button (click)="closeAddNoteModal()">Cancel</button>
+  </add-note>
+</dialog>
+
+<dialog #removeNoteDialog>
+  <div class="modal-header">
+    <h4>Delete this note?</h4>
+    <button class="note-remove" (click)="removeNoteDialog.close()">×</button>
+  </div>
+  <div class="note-details">
+    <span class="note-date">
+      {{ pendingNote()?.date | date: "MM/dd/yyyy" }}
+    </span>
+    <div class="note-title">{{ pendingNote()?.title }}</div>
+    <div class="note-content">
+      {{ pendingNote()?.content }}
+    </div>
+  </div>
+  <div class="buttons">
+    <button (click)="removeNoteDialog.close()">Cancel</button>
+    <button (click)="removeNote()">Delete</button>
+  </div>
+</dialog>

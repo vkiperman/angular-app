@@ -1,0 +1,23 @@
+<div class="modal-header">
+  <h4>{{ note()?.id ? "Edit Note" : "Add A Note" }}</h4>
+  <button class="closer" (click)="added.emit()">×</button>
+</div>
+<form [formGroup]="addNoteForm" class="add-note-form">
+  <div class="form" [formGroup]="addNoteForm">
+    <label for="noteDate">Date:</label>
+    <span>{{ note()?.date | date: "dd/MM/yyyy" }}</span>
+
+    <label for="noteTitle">Title:</label>
+    <input id="noteTitle" type="text" formControlName="title" />
+
+    <label for="noteContent">Content:</label>
+    <textarea id="noteContent" formControlName="content"></textarea>
+  </div>
+</form>
+
+<div class="buttons">
+  <ng-content></ng-content>
+  <button (click)="addNote()" type="button" [disabled]="addNoteForm.invalid">
+    {{ note()?.id ? "Edit Note" : "Add A Note" }}
+  </button>
+</div>
