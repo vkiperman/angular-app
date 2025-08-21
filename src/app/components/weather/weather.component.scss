@@ -1,0 +1,106 @@
+.weather-periods {
+  display: flex;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+
+  .weather-period {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem;
+    flex: 1 1 0px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    text-align: center;
+
+    &.full {
+      flex: 1 1 48%;
+    }
+
+    &.night {
+      background-color: #e0e0e0;
+      border-color: #9e9e9e;
+    }
+
+    &.active {
+      background-color: #e0f7fa;
+      border-color: #00bcd4;
+    }
+
+    &-name {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      white-space: nowrap;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #bbb;
+    }
+    &-temperature {
+      font-size: 1.2rem;
+      white-space: nowrap;
+    }
+
+    &-wind {
+      // margin-top: auto;
+      white-space: nowrap;
+    }
+  }
+}
+
+.wind-direction {
+  display: inline-block;
+  font-size: 1.2rem;
+  transform-origin: center;
+  color: #555;
+}
+.N {
+  rotate: 0turn;
+}
+.NNE {
+  rotate: 0.0625turn;
+}
+.NE {
+  rotate: 0.125turn;
+}
+.ENE {
+  rotate: 0.1875turn;
+}
+
+.E {
+  rotate: 0.25turn;
+}
+.ESE {
+  rotate: 0.3125turn;
+}
+.SE {
+  rotate: 0.375turn;
+}
+.SSE {
+  rotate: 0.4375turn;
+}
+
+.S {
+  rotate: 0.5turn;
+}
+.SSW {
+  rotate: 0.5625turn;
+}
+.SW {
+  rotate: 0.625turn;
+}
+.WSW {
+  rotate: 0.6875turn;
+}
+
+.W {
+  rotate: 0.75turn;
+}
+.WNW {
+  rotate: 0.8125turn;
+}
+.NW {
+  rotate: 0.875turn;
+}
+.NNW {
+  rotate: 0.9375turn;
+}

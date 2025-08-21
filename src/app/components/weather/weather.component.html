@@ -1,0 +1,36 @@
+@if (forecast$ | async; as forecast) {
+  <div class="weather-periods">
+    @for (
+      period of forecast.properties.periods;
+      track period;
+      let idx = $index
+    ) {
+      <div
+        class="weather-period"
+        [class.full]="period.number < 3"
+        [class.night]="period.name.toLocaleLowerCase() | includes: 'night'"
+      >
+        @if (period.number < 3) {
+          <h2 class="weather-period-name">{{ period.name }}</h2>
+        } @else {
+          <h4 class="weather-period-name">{{ period.name }}</h4>
+        }
+        <p class="weather-period-temperature">
+          {{ period.temperature }}°{{ period.temperatureUnit }}
+        </p>
+        @if (period.number < 3) {
+          <p>{{ period.detailedForecast }}</p>
+          <p class="weather-period-wind">
+            Wind:
+            {{ period.windDirection }}
+            at {{ period.windSpeed }}&nbsp;
+            <span class="{{ period.windDirection }} wind-direction">↑</span>
+          </p>
+        }
+      </div>
+    }
+  </div>
+  <canvasjs-chart [options]="forecast | weather: toggleDataSeries" />
+} @else {
+  <p>Loading weather data...</p>
+}

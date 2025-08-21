@@ -1,0 +1,125 @@
+@if (weightTrackerConfig$ | async; as weightTrackerConfig) {
+  <canvasjs-chart
+    [options]="data()"
+    (chartInstance)="handleChartReady($event)"
+  />
+
+  <div class="dashboard">
+    @if (!todayIsRecorded()) {
+      <form [formGroup]="form" (submit)="updateWeights()">
+        <label>
+          Enter Weight<br />
+          <input
+            type="number"
+            placeholder="195.2"
+            formControlName="y"
+            step=".1"
+          />
+        </label>
+        <button>Save</button>
+      </form>
+      <div class="sep"></div>
+    } @else {
+      <div>
+        <button (click)="todayIsRecorded.set(false)">Edit weight</button>
+      </div>
+      <div class="sep"></div>
+    }
+    @if (configForm$ | async; as config) {
+      <!-- <pre>{{ config | json }}</pre> -->
+      <form [formGroup]="configForm">
+        <label>
+          Projection Precision (last {{ config.windowSize }} weigh-ins)<br />
+          <input
+            type="range"
+            formControlName="windowSize"
+            min="2"
+            [max]="data().data[0].dataPoints.length"
+          />
+        </label>
+      </form>
+      <div class="sep"></div>
+    }
+    <div>
+      @if (getDiff(1); as diff) {
+        <div class="diff">
+          <span>One day diff:</span>
+          <span [class]="diff.className">{{ diff.value }}</span>
+        </div>
+      }
+      @if (getDiff(7); as diff) {
+        <div class="diff">
+          <span>One week diff:</span>
+          <span [class]="diff.className">{{ diff.value }}</span>
+        </div>
+      }
+      @if (getDiff(); as diff) {
+        <div class="diff">
+          <span>Month to date diff:</span>
+          <span [class]="diff.className">{{ diff.value }}</span>
+        </div>
+      }
+      @if (getDiff(data().data[0].dataPoints.length - 1); as diff) {
+        <div class="diff">
+          <span>Total diff:</span>
+          <span [class]="diff.className">{{ diff.value }}</span>
+        </div>
+      }
+    </div>
+    <div class="sep"></div>
+    <div>
+      @if (data().data[0].dataPoints; as dataPoints) {
+        @if (
+          {
+            avg: (dataPoints | avg: "y"),
+            high: (dataPoints | high: "y"),
+            low: (dataPoints | low: "y"),
+          };
+          as stats
+        ) {
+          <div
+            class="diff"
+            (mouseenter)="handleShowTooltip(stats.high)"
+            (mouseleave)="handleHideTooltip()"
+          >
+            <span>High:</span>
+            <span [class]="stats.high > stats.avg ? 'up' : 'down'">{{
+              stats.high.toFixed(1)
+            }}</span>
+          </div>
+          <div
+            class="diff"
+            (mouseenter)="handleShowTooltip(stats.low)"
+            (mouseleave)="handleHideTooltip()"
+          >
+            <span>Low:</span>
+            <span [class]="stats.low > stats.avg ? 'up' : 'down'">{{
+              stats.low.toFixed(1)
+            }}</span>
+          </div>
+          <div class="diff">
+            <span>Avg:</span>
+            <span>{{ stats.avg.toFixed(1) }}</span>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="config">
+      <dialog #config>
+        <header>
+          <h2>⚙ Settings</h2>
+          <span class="close" (click)="hideDialog(config)">×</span>
+        </header>
+        @if (config.open) {
+          <config-form (saved)="hideDialog(config)">
+            <button type="button" (click)="hideDialog(config)">Cancel</button>
+          </config-form>
+        }
+      </dialog>
+      <!-- <a class="test">⚙</a> -->
+      <a class="click" (click)="showDialog(config)">⚙</a>
+    </div>
+  </div>
+  <!-- <pre>{{ projected() | json }}</pre> -->
+}

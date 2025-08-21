@@ -1,0 +1,16 @@
+<form (submit)="saveConfig()" [formGroup]="form">
+  <div class="form">
+    <label>
+      Units
+      <select formControlName="units" name="units">
+        @for (meta of unitsMeta; track meta.value) {
+          <option [value]="meta.value">{{ meta.label }}</option>
+        }
+      </select>
+    </label>
+  </div>
+  <div class="buttons">
+    <ng-content></ng-content>
+    <button>Save</button>
+  </div>
+</form>

@@ -1,0 +1,35 @@
+<h1>Artist:</h1>
+
+@if (form$ | async) {
+  <form [formGroup]="form">
+    @if (artists$ | async; as artists) {
+      <select formControlName="artist">
+        <option value="">Select An Artist</option>
+        @for (artist of artists; track artist.value) {
+          <option [value]="artist.value">{{ artist.label }}</option>
+        }
+      </select>
+    } @else {
+      Loading...
+    }
+  </form>
+}
+@if (data$ | async; as data) {
+  <h2>
+    <a [href]="data.external_urls.spotify" target="_blank">{{ data.name }}</a>
+  </h2>
+  <div>
+    @for (image of data.images.slice(0, 1); track image.url) {
+      <picture>
+        <source [srcset]="image.url" media="(orientation: portrait)" />
+        <img
+          [src]="image.url"
+          alt="Artist Logo"
+          [width]="image.width"
+          [height]="image.height"
+        />
+      </picture>
+    }
+  </div>
+}
+<!-- <pre>{{ data$ | async | json }}</pre> -->

@@ -1,0 +1,42 @@
+:host {
+  position: relative;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  width: 1504.5px;
+  padding-inline: 64px;
+  height: 780px;
+  background-color: black;
+  color: white;
+}
+
+.nums {
+  font-size: 40em;
+  font-weight: 500;
+  letter-spacing: -0.066em;
+  transform-origin: 0 0;
+}
+
+.nums,
+.space,
+.odyssey {
+  font-kerning: auto;
+  position: absolute;
+  color: white;
+}
+
+.space,
+.odyssey {
+  top: 5.1em;
+  font-size: 4.3em;
+  white-space: nowrap;
+  word-break: keep-all;
+  letter-spacing: -1px;
+}
+
+.space {
+  right: 11.75em;
+}
+
+.odyssey {
+  left: 14.4em;
+}

@@ -1,0 +1,20 @@
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  select {
+    min-width: 150px;
+  }
+}
+
+.form {
+  display: flex;
+  gap: 8px;
+  padding-block: 16px;
+}
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

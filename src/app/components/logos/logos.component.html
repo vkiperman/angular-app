@@ -1,0 +1,102 @@
+@if (searchForm$ | async; as search) {
+  <div>
+    <form [formGroup]="searchForm">
+      <label>
+        See team logos for
+        <select name="team" formControlName="team">
+          <option value="">Select A Team</option>
+          @for (team of teams; track team.value) {
+            <option [value]="team.value">{{ team.label }}</option>
+          }
+        </select>
+      </label>
+      @if (search.team) {
+        <label>
+          Filter by year
+          <input
+            type="number"
+            formControlName="year"
+            [min]="teams | minYear: search.team!"
+            [max]="maxYear"
+          />
+        </label>
+      }
+    </form>
+  </div>
+
+  <div class="animated">
+    @for (n of [-2, -1, 0, 1, 2]; track $index) {
+      @if (search.team! | step: teams : 100 | async; as year) {
+        @if (
+          year + n >= (teams | minYear: search.team!) &&
+          year + n <= (teams | maxYear: search.team!)
+        ) {
+          <div class="logo">
+            <a
+              target="_blank"
+              [href]="
+                'https://www.pro-football-reference.com/teams/' +
+                search.team +
+                '/' +
+                (year + n) +
+                '.htm'
+              "
+            >
+              <div class="image">
+                <img
+                  [title]="'Team Logo ' + year + 1"
+                  [src]="
+                    'https://cdn.ssref.net/req/202508011/tlogo/pfr/' +
+                    search.team +
+                    '-' +
+                    (year + n) +
+                    '.png'
+                  "
+                />
+              </div>
+              <div>
+                {{ year + n }}
+              </div>
+            </a>
+          </div>
+        }
+      }
+    }
+  </div>
+
+  <div class="container">
+    @for (year of search.team! | range: teams | async; track $index) {
+      @if ((!search.year || year === search.year) && search.team) {
+        <div class="logo">
+          <a
+            target="_blank"
+            [href]="
+              'https://www.pro-football-reference.com/teams/' +
+              search.team +
+              '/' +
+              year +
+              '.htm'
+            "
+          >
+            <div class="image">
+              <img
+                (load)="checkImage(search.team)($event)"
+                [title]="'Team Logo ' + year"
+                [src]="
+                  'https://cdn.ssref.net/req/202508011/tlogo/pfr/' +
+                  search.team +
+                  '-' +
+                  year +
+                  '.png'
+                "
+              />
+            </div>
+            <div>
+              {{ year }}
+            </div>
+          </a>
+        </div>
+      }
+    }
+  </div>
+}
