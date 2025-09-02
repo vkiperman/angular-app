@@ -13,11 +13,17 @@ import {
   CanvasJSChart,
 } from '@canvasjs/angular-charts';
 import deepEqual from 'deep-equal';
-import { distinctUntilChanged, filter, Observable, startWith, tap } from 'rxjs';
-import { AvgPipe } from '../../pipes/avg.pipe';
-import { HighPipe } from '../../pipes/high.pipe';
-import { LowPipe } from '../../pipes/low.pipe';
+import {
+  distinctUntilChanged,
+  filter,
+  map,
+  Observable,
+  startWith,
+  tap,
+} from 'rxjs';
 import { ConfigFormComponent } from './components/config-form/config-form.component';
+import { DiffComponent } from './components/diff/diff.component';
+import { StatsComponent } from './components/stats/stats.component';
 import { WeightTrackerConfigState } from './store/weight-tracker-config.reducer';
 import { WeightTrackerConfigStore } from './store/weight-tracker-config.store';
 
@@ -26,16 +32,17 @@ interface WeightData {
   y: number;
 }
 
+export const storageItemName = 'weight-tracker';
+
 @Component({
   selector: 'weight-tracker',
   imports: [
-    AvgPipe,
     CanvasJSAngularChartsModule,
     CommonModule,
     ConfigFormComponent,
-    HighPipe,
-    LowPipe,
+    DiffComponent,
     ReactiveFormsModule,
+    StatsComponent,
   ],
   templateUrl: './weight-tracker.component.html',
   styleUrl: './weight-tracker.component.scss',
@@ -56,27 +63,26 @@ export class WeightTrackerComponent implements OnInit {
     y: new FormControl<number | null>(null),
     // w: new FormControl(new Date().getDay() < 1 || new Date().getDay() > 5),
   });
+
+  public weekdays = [
+    'Select One',
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ].map((label, value) => ({ value, label }));
+
+  public byWeekday!: FormGroup;
+  public byWeekday$!: Observable<number>;
+
   public configForm!: FormGroup;
   public configForm$!: Observable<{ windowSize: number }>;
-  private _weightDate = [
-    { x: new Date(2025, 6, 21), y: 208.1 },
-    { x: new Date(2025, 6, 23), y: 210.4 },
-    { x: new Date(2025, 6, 24), y: 209.9 },
-    { x: new Date(2025, 6, 25), y: 207.0 },
-    { x: new Date(2025, 6, 26), y: 208.0 },
-    { x: new Date(2025, 6, 28), y: 207.7 },
-    { x: new Date(2025, 6, 29), y: 208.3 },
-    { x: new Date(2025, 6, 30), y: 205.4 },
-    { x: new Date(2025, 7, 1), y: 210.3 },
-    { x: new Date(2025, 7, 3), y: 209.7 },
-    { x: new Date(2025, 7, 4), y: 208.3 },
-    { x: new Date(2025, 7, 5), y: 207.6 },
-    { x: new Date(2025, 7, 6), y: 207.1 },
-  ];
 
-  private weightData = signal<WeightData[]>(this._weightDate);
+  private weightData = signal<WeightData[]>([]);
 
-  // private readonly projected = computed(() => this.projectEachStep());
   public readonly projected = signal(
     this.slidingProjections(this.configForm?.get('windowSize')?.value!),
   );
@@ -96,7 +102,7 @@ export class WeightTrackerComponent implements OnInit {
 
     this.configForm = new FormGroup({
       windowSize: new FormControl<number>(7),
-    })!;
+    });
     this.configForm$ = this.configForm.valueChanges.pipe(
       tap(({ windowSize }) => {
         this.projected.set(this.slidingProjections(windowSize));
@@ -104,6 +110,27 @@ export class WeightTrackerComponent implements OnInit {
       }),
       startWith(this.configForm.value),
     );
+
+    this.byWeekday = new FormGroup({
+      weekday: new FormControl<number>(0),
+    });
+
+    this.byWeekday$ = this.byWeekday.valueChanges.pipe(
+      map(({ weekday }) => weekday),
+      tap((weekday) => {
+        this.weightData.update((data) =>
+          data.filter(({ x }) => !weekday || x.getDay() === weekday),
+        );
+        this.canvasJSChart.chart.render();
+      }),
+      startWith(0.1),
+    );
+    setTimeout(() => {
+      localStorage.setItem(
+        `${storageItemName}-backup`,
+        localStorage.getItem(storageItemName)!,
+      );
+    }, 0);
   }
 
   private init() {
@@ -130,10 +157,7 @@ export class WeightTrackerComponent implements OnInit {
 
   private getDedupedStoredData() {
     const seen = new Set<number>();
-    return [
-      ...this._weightDate,
-      ...JSON.parse(localStorage.getItem('weight-tracker') || '[]'),
-    ]
+    return [...JSON.parse(localStorage.getItem(storageItemName) || '[]')]
       .map(({ x, y }: WeightData) => ({ x: new Date(x), y }))
       .filter((item: WeightData) => !seen.has(+item.x) && seen.add(+item.x));
   }
@@ -178,6 +202,7 @@ export class WeightTrackerComponent implements OnInit {
       },
       axisX: {
         valueFormatString: 'DDD M/D/YY',
+        interlacedColor: '#0000000A',
       },
       axisY: {
         title: `Weight (in ${units})`,
@@ -268,7 +293,7 @@ export class WeightTrackerComponent implements OnInit {
     this.projected.set(
       this.slidingProjections(this.configForm.get('windowSize')?.value),
     );
-    localStorage.setItem('weight-tracker', JSON.stringify(this.weightData()));
+    localStorage.setItem(storageItemName, JSON.stringify(this.weightData()));
     this.todayIsRecorded.set(this.getTodayIsRecorded());
 
     this.canvasJSChart.chart.render();
@@ -348,50 +373,7 @@ export class WeightTrackerComponent implements OnInit {
 
         return { x: new Date(nextT), y: yhat ?? null };
       })
-      .filter(({ x }, i, src) => +x !== +src[i - 1]?.x);
-  }
-
-  /**
-   *
-   * @param min number
-   * @returns an array where each item is the projection of all the available data
-   */
-  private projectEachStep(min = 2) {
-    const data = this.weightData();
-    if (data.length < min) return [];
-
-    const projections = data.slice(0, min);
-
-    for (let i = min; i <= data.length; i++) {
-      const subset = data.slice(0, i);
-      const xs = subset.map(({ x }) => x.getTime());
-      const ys = subset.map(({ y }) => y);
-
-      const n = subset.length;
-      const meanX = xs.reduce((sum, val) => sum + val, 0) / n;
-      const meanY = ys.reduce((sum, val) => sum + val, 0) / n;
-
-      let numerator = 0,
-        denominator = 0;
-      for (let j = 0; j < n; j++) {
-        numerator += (xs[j] - meanX) * (ys[j] - meanY);
-        denominator += (xs[j] - meanX) ** 2;
-      }
-
-      const m = numerator / denominator;
-      const b = meanY - m * meanX;
-
-      const lastDate = new Date(xs[xs.length - 1]);
-      const x = new Date(lastDate.setDate(lastDate.getDate() + 1));
-      const y = +(m * x.getTime() + b).toFixed(1);
-
-      projections.push({
-        x,
-        y,
-      });
-    }
-
-    return projections;
+      .filter(({ x }, i, src) => i === src.length - 1 || +x < +src[i + 1]?.x);
   }
 
   /**

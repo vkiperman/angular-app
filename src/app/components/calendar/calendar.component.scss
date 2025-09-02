@@ -15,7 +15,7 @@
     border: none;
     cursor: pointer;
     font-size: 1.2rem;
-    color: hwb(211 0% 0%);
+    color: rgb(33, 99, 109);
     transition:
       color 0.3s,
       background-color 0.3s;
@@ -23,7 +23,7 @@
     padding: 10px 11px;
 
     &:hover {
-      background-color: hwb(211 0% 0%);
+      background-color: rgba(54, 158, 173, 1);
       color: white;
     }
   }
@@ -37,16 +37,16 @@ thead {
       padding: 10px;
       font-weight: 600;
       color: #fff;
-      background-color: hwb(211 0% 0%);
+      background-color: rgba(54, 158, 173, 1);
       width: 100px;
       border-radius: 4px;
 
       &:hover {
-        background-color: hwb(211 0% 20%);
+        background-color: rgb(43, 126, 139);
       }
 
       &.today {
-        background-color: hwb(211 0% 40%);
+        background-color: rgb(43, 126, 139);
       }
     }
   }
@@ -72,8 +72,8 @@ tbody {
         color: #aaa;
       }
       &.today {
-        background-color: hwb(211 80% 0%);
-        color: hwb(211 0% 40%);
+        background-color: rgba(54, 158, 173, 0.3);
+        color: rgb(43, 126, 139);
         font-weight: bold;
       }
 
@@ -171,13 +171,13 @@ tbody {
 }
 .note-remove {
   cursor: pointer;
-  color: hwb(211 0% 0%);
+  color: rgba(54, 158, 173, 1);
   background-color: transparent;
   border: none;
   font-size: 1.2rem;
   transition: color 0.3s;
 
   &:hover {
-    color: hwb(211 0% 40%);
+    color: rgb(43, 126, 139);
   }
 }

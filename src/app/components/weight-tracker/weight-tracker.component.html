@@ -5,26 +5,29 @@
   />
 
   <div class="dashboard">
-    @if (!todayIsRecorded()) {
-      <form [formGroup]="form" (submit)="updateWeights()">
-        <label>
-          Enter Weight<br />
-          <input
-            type="number"
-            placeholder="195.2"
-            formControlName="y"
-            step=".1"
-          />
-        </label>
-        <button>Save</button>
-      </form>
-      <div class="sep"></div>
-    } @else {
+    <ng-container>
       <div>
-        <button (click)="todayIsRecorded.set(false)">Edit weight</button>
+        @if (!todayIsRecorded()) {
+          <form [formGroup]="form" (submit)="updateWeights()">
+            <label>
+              Enter Weight<br />
+              <input
+                type="number"
+                placeholder="195.2"
+                formControlName="y"
+                step=".1"
+              />
+            </label>
+            <button>Save</button>
+          </form>
+          <div>{{ form.get("x")?.value | date }}</div>
+        } @else {
+          <button (click)="todayIsRecorded.set(false)">Edit weight</button>
+        }
       </div>
       <div class="sep"></div>
-    }
+    </ng-container>
+
     @if (configForm$ | async; as config) {
       <!-- <pre>{{ config | json }}</pre> -->
       <form [formGroup]="configForm">
@@ -40,70 +43,31 @@
       </form>
       <div class="sep"></div>
     }
-    <div>
-      @if (getDiff(1); as diff) {
-        <div class="diff">
-          <span>One day diff:</span>
-          <span [class]="diff.className">{{ diff.value }}</span>
-        </div>
-      }
-      @if (getDiff(7); as diff) {
-        <div class="diff">
-          <span>One week diff:</span>
-          <span [class]="diff.className">{{ diff.value }}</span>
-        </div>
-      }
-      @if (getDiff(); as diff) {
-        <div class="diff">
-          <span>Month to date diff:</span>
-          <span [class]="diff.className">{{ diff.value }}</span>
-        </div>
-      }
-      @if (getDiff(data().data[0].dataPoints.length - 1); as diff) {
-        <div class="diff">
-          <span>Total diff:</span>
-          <span [class]="diff.className">{{ diff.value }}</span>
-        </div>
-      }
-    </div>
+
+    @if (this.data().data[0].dataPoints.length > 1) {
+      <diff [data]="this.data().data[0].dataPoints" />
+      <div class="sep"></div>
+    }
+
+    <stats
+      [data]="data().data[0].dataPoints"
+      [canvasJSChart]="canvasJSChart || {}"
+    />
     <div class="sep"></div>
-    <div>
-      @if (data().data[0].dataPoints; as dataPoints) {
-        @if (
-          {
-            avg: (dataPoints | avg: "y"),
-            high: (dataPoints | high: "y"),
-            low: (dataPoints | low: "y"),
-          };
-          as stats
-        ) {
-          <div
-            class="diff"
-            (mouseenter)="handleShowTooltip(stats.high)"
-            (mouseleave)="handleHideTooltip()"
-          >
-            <span>High:</span>
-            <span [class]="stats.high > stats.avg ? 'up' : 'down'">{{
-              stats.high.toFixed(1)
-            }}</span>
-          </div>
-          <div
-            class="diff"
-            (mouseenter)="handleShowTooltip(stats.low)"
-            (mouseleave)="handleHideTooltip()"
-          >
-            <span>Low:</span>
-            <span [class]="stats.low > stats.avg ? 'up' : 'down'">{{
-              stats.low.toFixed(1)
-            }}</span>
-          </div>
-          <div class="diff">
-            <span>Avg:</span>
-            <span>{{ stats.avg.toFixed(1) }}</span>
-          </div>
-        }
-      }
-    </div>
+
+    <!-- WIP -->
+    <!-- @if (byWeekday$ | async) {
+      <form [formGroup]="byWeekday">
+        <label
+          >By Weekday<br />
+          <select formControlName="weekday">
+            @for (opt of weekdays; track $index) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+      </form>
+    } -->
 
     <div class="config">
       <dialog #config>
