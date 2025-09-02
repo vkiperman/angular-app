@@ -1,0 +1,24 @@
+.diff {
+  display: flex;
+  justify-content: space-between;
+  gap: 1ch;
+  margin-right: 0.55em;
+  cursor: default;
+
+  .up {
+    color: red;
+    font-weight: 700;
+    &::after {
+      content: " ↑";
+      position: absolute;
+    }
+  }
+  .down {
+    color: green;
+    font-weight: 700;
+    &::after {
+      content: " ↓";
+      position: absolute;
+    }
+  }
+}

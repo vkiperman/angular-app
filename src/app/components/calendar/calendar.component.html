@@ -9,44 +9,50 @@
   <table>
     <thead>
       <tr>
-        <th
-          *ngFor="let day of getWeekdayNames()"
-          [class]="{ today: day.isToday }"
-        >
-          {{ day.name }}
-        </th>
+        @for (day of getWeekdayNames(); track $index) {
+          <th [class]="{ today: day.isToday }">
+            {{ day.name }}
+          </th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let week of selectedMonth()">
-        <td
-          *ngFor="let day of week"
-          [class]="{
-            'other-month': !day.currentMonth,
-            today: day.isToday,
-          }"
-          [style.cursor]="day.isInThePast ? 'not-allowed' : 'pointer'"
-          (click)="day.isInThePast || showAddNoteModal($event, null, day.date)"
-        >
-          {{ day.date | date: "d" }}
-          <div class="past" *ngIf="day.isInThePast"></div>
-          <ul class="notes">
-            @for (note of storedNotes(); track note.id) {
-              @if ((note.date | date) === (day.date | date)) {
-                <li (click)="showAddNoteModal($event, note)">
-                  <span class="note-title">{{ note.title }}</span>
-                  <button
-                    class="note-remove"
-                    (click)="showRemoveNoteDialog($event, note)"
-                  >
-                    ×
-                  </button>
-                </li>
+      @for (week of selectedMonth(); track $index) {
+        <tr>
+          @for (day of week; track $index) {
+            <td
+              [class]="{
+                'other-month': !day.currentMonth,
+                today: day.isToday,
+              }"
+              [style.cursor]="day.isInThePast ? 'not-allowed' : 'pointer'"
+              (click)="
+                day.isInThePast || showAddNoteModal($event, null, day.date)
+              "
+            >
+              {{ day.date | date: "d" }}
+              @if (day.isInThePast) {
+                <div class="past"></div>
               }
-            }
-          </ul>
-        </td>
-      </tr>
+              <ul class="notes">
+                @for (note of storedNotes(); track note.id) {
+                  @if ((note.date | date) === (day.date | date)) {
+                    <li (click)="showAddNoteModal($event, note)">
+                      <span class="note-title">{{ note.title }}</span>
+                      <button
+                        class="note-remove"
+                        (click)="showRemoveNoteDialog($event, note)"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  }
+                }
+              </ul>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
 </div>

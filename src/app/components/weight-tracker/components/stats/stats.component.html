@@ -1,0 +1,37 @@
+<div>
+  @if (data(); as dataPoints) {
+    @if (
+      {
+        avg: (dataPoints | avg: "y"),
+        high: (dataPoints | high: "y"),
+        low: (dataPoints | low: "y"),
+      };
+      as stats
+    ) {
+      <div
+        class="diff"
+        (mouseenter)="handleShowTooltip(stats.high)"
+        (mouseleave)="handleHideTooltip()"
+      >
+        <span>High:</span>
+        <span [class]="stats.high > stats.avg ? 'up' : 'down'">{{
+          stats.high.toFixed(1)
+        }}</span>
+      </div>
+      <div
+        class="diff"
+        (mouseenter)="handleShowTooltip(stats.low)"
+        (mouseleave)="handleHideTooltip()"
+      >
+        <span>Low:</span>
+        <span [class]="stats.low > stats.avg ? 'up' : 'down'">{{
+          stats.low.toFixed(1)
+        }}</span>
+      </div>
+      <div class="diff">
+        <span>Avg:</span>
+        <span>{{ stats.avg.toFixed(1) }}</span>
+      </div>
+    }
+  }
+</div>

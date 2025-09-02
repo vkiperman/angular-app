@@ -9,26 +9,32 @@ import { WeightTrackerComponent } from './components/weight-tracker/weight-track
 export const routes: Routes = [
   {
     path: 'calendar',
+    title: 'Calendar',
     component: CalendarComponent,
   },
   {
     path: 'weather',
+    title: 'Weather',
     component: WeatherComponent,
   },
   {
     path: 'typography',
+    title: 'Typography',
     component: TypographyComponent,
   },
   {
     path: 'weight-tracker',
+    title: 'Weight Tracker',
     component: WeightTrackerComponent,
   },
   {
     path: 'spotify',
+    title: 'Spotify',
     component: SpotifyComponent,
   },
   {
     path: 'logos',
+    title: 'Logos',
     component: LogosComponent,
   },
 ];
