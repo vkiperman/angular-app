@@ -82,3 +82,24 @@ form {
     }
   }
 }
+
+.legend {
+  display: flex;
+  gap: 8px;
+
+  .legend-item {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    .legend-color {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1px solid #000;
+    }
+    .legend-label {
+      font-size: 11px;
+    }
+  }
+}

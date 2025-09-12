@@ -53,6 +53,8 @@ export class WeightTrackerComponent implements OnInit {
   public weightTrackerConfig = signal<WeightTrackerConfigState | null>(null);
   public weightTrackerConfig$!: Observable<WeightTrackerConfigState>;
 
+  public legend: { color: string; label: string }[] = [];
+
   public form = new FormGroup({
     x: new FormControl<Date>(
       new Date(
@@ -241,11 +243,17 @@ export class WeightTrackerComponent implements OnInit {
           color: 'rgba(54,158,173,.7)',
           xValueFormatString: 'DDD, MM/DD/YYYY',
           toolTipContent: `{y} ${units}<br>{x}`,
-          dataPoints: this.weightData().map((w) => ({
-            ...w,
-            color: `hsla(${(w.x.getDay() / 6) * 360}, 100%, 40%, 1.00)`,
-            click: this.handleChartClick.bind(this),
-          })),
+          dataPoints: this.weightData().map((w) => {
+            const day = w.x.getDay();
+            const color = `hsla(${(day / 6) * 360}, 100%, 40%, 1.00)`;
+            const { label } = this.weekdays[day + 1];
+            this.legend[day] = { label, color };
+            return {
+              ...w,
+              color,
+              click: this.handleChartClick.bind(this),
+            };
+          }),
         },
         {
           visible: true,
