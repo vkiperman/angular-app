@@ -8,17 +8,29 @@
   .up {
     color: red;
     font-weight: 700;
+    position: relative;
     &::after {
       content: " ↑";
       position: absolute;
+      right: -0.79em;
+    }
+  }
+  .avg {
+    position: relative;
+    &::after {
+      content: " x̄";
+      position: absolute;
+      right: -0.7em;
     }
   }
   .down {
     color: green;
     font-weight: 700;
+    position: relative;
     &::after {
       content: " ↓";
       position: absolute;
+      right: -0.79em;
     }
   }
 }

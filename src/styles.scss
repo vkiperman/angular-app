@@ -10,8 +10,8 @@ html body {
 /*Range Reset*/
 input[type="range"] {
   accent-color: rgba(54, 158, 173, 0.7);
-  -webkit-appearance: none;
-  appearance: none;
+  // -webkit-appearance: none;
+  // appearance: none;
   background: transparent;
   cursor: pointer;
   width: 15rem;
