@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { AvgPipe } from '../../../../pipes/avg.pipe';
 import { HighPipe } from '../../../../pipes/high.pipe';
@@ -5,7 +6,7 @@ import { LowPipe } from '../../../../pipes/low.pipe';
 
 @Component({
   selector: 'stats',
-  imports: [AvgPipe, HighPipe, LowPipe],
+  imports: [AvgPipe, CommonModule, HighPipe, LowPipe],
   templateUrl: './stats.component.html',
   styleUrl: './stats.component.scss',
 })

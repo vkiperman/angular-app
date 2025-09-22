@@ -20,6 +20,9 @@
             <label>
               Enter Weight<br />
               <input
+                [class.invalid]="
+                  form.get('y')?.invalid && form.get('y')?.touched
+                "
                 type="number"
                 placeholder="195.2"
                 formControlName="y"
@@ -29,6 +32,12 @@
             <button>Save</button>
           </form>
           <div>{{ form.get("x")?.value | date }}</div>
+          @if (form.get("y")?.errors; as errors) {
+            <div>
+              {{ errors?.["tooLow"] && "Weight seems too low." }}
+              {{ errors?.["tooHigh"] && "Weight seems too high." }}
+            </div>
+          }
         } @else {
           <button (click)="todayIsRecorded.set(false)">Edit weight</button>
         }

@@ -85,7 +85,7 @@ form {
 
 .legend {
   display: flex;
-  gap: 8px;
+  gap: 16px;
 
   .legend-item {
     display: flex;
@@ -102,4 +102,9 @@ form {
       font-size: 11px;
     }
   }
+}
+
+input.invalid {
+  border-color: rgb(218, 0, 0);
+  background-color: hsl(0, 100%, 92%);
 }

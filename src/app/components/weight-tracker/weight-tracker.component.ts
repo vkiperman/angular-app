@@ -168,6 +168,23 @@ export class WeightTrackerComponent implements OnInit {
       ),
     );
     this.todayIsRecorded.set(this.getTodayIsRecorded());
+
+    this.form.valueChanges.subscribe(({ x, y }) => {
+      const now = new Date();
+      const sinceLastEntry = Math.max(
+        1,
+        now.getDate() -
+          this.weightData()[this.weightData().length - 1]?.x.getDate(),
+      );
+
+      if (sinceLastEntry >= 14) return; // skip validation if last entry was 2+ weeks ago
+      const prevWeight = this.weightData()[this.weightData().length - 1]?.y;
+      if (y && y < prevWeight - 14 * sinceLastEntry)
+        return this.form.get('y')?.setErrors({ tooLow: true });
+      if (y && y > prevWeight + 14 * sinceLastEntry)
+        return this.form.get('y')?.setErrors({ tooHigh: true });
+      this.form.get('y')?.setErrors(null);
+    });
   }
 
   private getDedupedStoredData() {
@@ -311,6 +328,8 @@ export class WeightTrackerComponent implements OnInit {
   }
 
   public updateWeights() {
+    if (this.form.invalid) return;
+
     this.weightData.update((state) => [
       ...state.filter(({ x }) => +x !== +this.form.value.x!),
       this.form.value as WeightData,
