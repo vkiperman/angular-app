@@ -6,19 +6,31 @@
   cursor: default;
 
   .up {
-    color: red;
+    color: rgb(214, 0, 0);
     font-weight: 700;
+    position: relative;
     &::after {
       content: " ↑";
       position: absolute;
+      right: -0.79em;
+    }
+  }
+  .avg {
+    position: relative;
+    &::after {
+      content: " x̄";
+      position: absolute;
+      right: -0.7em;
     }
   }
   .down {
     color: green;
     font-weight: 700;
+    position: relative;
     &::after {
       content: " ↓";
       position: absolute;
+      right: -0.79em;
     }
   }
 }

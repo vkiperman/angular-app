@@ -3,7 +3,9 @@
     @if (item.diff.value) {
       <div class="diff">
         <span>{{ item.title }}</span>
-        <span [class]="item.diff.className">{{ item.diff.value }}</span>
+        <span [class]="item.diff.className">{{
+          item.diff.value | number: "1.2-2"
+        }}</span>
       </div>
     }
   }

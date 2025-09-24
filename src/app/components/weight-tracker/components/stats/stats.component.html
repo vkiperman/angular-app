@@ -15,8 +15,12 @@
       >
         <span>High:</span>
         <span [class]="stats.high > stats.avg ? 'up' : 'down'">{{
-          stats.high.toFixed(1)
+          stats.high | number: "1.2-2"
         }}</span>
+      </div>
+      <div class="diff">
+        <span>Avg:</span>
+        <span class="avg">{{ stats.avg | number: "1.2-2" }}</span>
       </div>
       <div
         class="diff"
@@ -25,12 +29,8 @@
       >
         <span>Low:</span>
         <span [class]="stats.low > stats.avg ? 'up' : 'down'">{{
-          stats.low.toFixed(1)
+          stats.low | number: "1.2-2"
         }}</span>
-      </div>
-      <div class="diff">
-        <span>Avg:</span>
-        <span>{{ stats.avg.toFixed(1) }}</span>
       </div>
     }
   }

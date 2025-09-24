@@ -15,6 +15,7 @@ import {
 import deepEqual from 'deep-equal';
 import {
   distinctUntilChanged,
+  distinctUntilKeyChanged,
   filter,
   map,
   Observable,
@@ -26,11 +27,12 @@ import { DiffComponent } from './components/diff/diff.component';
 import { StatsComponent } from './components/stats/stats.component';
 import { WeightTrackerConfigState } from './store/weight-tracker-config.reducer';
 import { WeightTrackerConfigStore } from './store/weight-tracker-config.store';
+import { fillLinearDaily, WeightData } from './weight-tracker.utils';
 
-interface WeightData {
-  x: Date;
-  y: number;
-}
+// interface WeightData {
+//   x: Date;
+//   y: number;
+// }
 
 export const storageItemName = 'weight-tracker';
 
@@ -73,18 +75,27 @@ export class WeightTrackerComponent implements OnInit {
     'Thursday',
     'Friday',
     'Saturday',
-  ].map((label, value) => ({ value, label }));
+  ].map((label, value) => ({ value: value - 1, label }));
+
+  public legend: { color: string; label: string }[] = this.weekdays
+    .slice(1)
+    .map(({ label }, i) => ({
+      label,
+      color: this.getHSLA(i),
+    }));
 
   public byWeekday!: FormGroup;
   public byWeekday$!: Observable<number>;
 
   public configForm!: FormGroup;
-  public configForm$!: Observable<{ windowSize: number }>;
+  public configForm$!: Observable<{ projectionSampleSize: number }>;
 
   private weightData = signal<WeightData[]>([]);
 
   public readonly projected = signal(
-    this.slidingProjections(this.configForm?.get('windowSize')?.value!),
+    this.slidingProjections(
+      this.configForm?.get('projectionSampleSize')?.value!,
+    ),
   );
 
   public todayIsRecorded = signal(false);
@@ -101,29 +112,37 @@ export class WeightTrackerComponent implements OnInit {
     );
 
     this.configForm = new FormGroup({
-      windowSize: new FormControl<number>(7),
+      projectionSampleSize: new FormControl<number>(7, { nonNullable: true }),
     });
     this.configForm$ = this.configForm.valueChanges.pipe(
-      tap(({ windowSize }) => {
-        this.projected.set(this.slidingProjections(windowSize));
+      distinctUntilKeyChanged('projectionSampleSize'),
+      tap(({ projectionSampleSize }) => {
+        this.projected.set(this.slidingProjections(projectionSampleSize));
         this.canvasJSChart.chart.render();
       }),
       startWith(this.configForm.value),
     );
 
     this.byWeekday = new FormGroup({
-      weekday: new FormControl<number>(0),
+      weekday: new FormControl<number>(-1, { nonNullable: true }),
     });
 
     this.byWeekday$ = this.byWeekday.valueChanges.pipe(
       map(({ weekday }) => weekday),
       tap((weekday) => {
-        this.weightData.update((data) =>
-          data.filter(({ x }) => !weekday || x.getDay() === weekday),
+        console.log(
+          this.getDedupedStoredData().filter(
+            ({ x }) => +weekday < 0 || x.getDay() === +weekday,
+          ),
+        );
+        this.weightData.update(() =>
+          this.getDedupedStoredData().filter(
+            ({ x }) => !+weekday || x.getDay() === +weekday,
+          ),
         );
         this.canvasJSChart.chart.render();
       }),
-      startWith(0.1),
+      startWith(-1),
     );
     setTimeout(() => {
       localStorage.setItem(
@@ -133,33 +152,57 @@ export class WeightTrackerComponent implements OnInit {
     }, 0);
   }
 
-  private init() {
-    const wt = this.weightTrackerConfig()?.units ? 0.453592 : 1;
+  private get weightMultiplier() {
+    return this.weightTrackerConfig()?.units ? 0.453592 : 1;
+  }
 
-    this.weightData.update(() =>
-      this.getDedupedStoredData().map(({ x, y }) => ({
-        x,
-        y: y * wt,
-      })),
-    );
+  private init() {
+    this.weightData.update(() => this.getDedupedStoredData());
 
     this.form
       .get('y')
       ?.setValue(
-        +(this.weightData()[this.weightData().length - 1]?.y * wt).toFixed(1),
+        +(
+          this.weightData()[this.weightData().length - 1]?.y *
+          this.weightMultiplier
+        ).toFixed(1),
       );
 
     this.projected.set(
-      this.slidingProjections(this.configForm?.get('windowSize')?.value),
+      this.slidingProjections(
+        this.configForm?.get('projectionSampleSize')?.value,
+      ),
     );
     this.todayIsRecorded.set(this.getTodayIsRecorded());
+
+    this.form.valueChanges.subscribe(({ x, y }) => {
+      const now = new Date();
+      const sinceLastEntry = Math.max(
+        1,
+        now.getDate() -
+          this.weightData()[this.weightData().length - 1]?.x.getDate(),
+      );
+
+      if (sinceLastEntry >= 14) return; // skip validation if last entry was 2+ weeks ago
+      const prevWeight = this.weightData()[this.weightData().length - 1]?.y;
+      if (y && y < prevWeight - 14 * sinceLastEntry)
+        return this.form.get('y')?.setErrors({ tooLow: true });
+      if (y && y > prevWeight + 14 * sinceLastEntry)
+        return this.form.get('y')?.setErrors({ tooHigh: true });
+      this.form.get('y')?.setErrors(null);
+    });
   }
 
   private getDedupedStoredData() {
     const seen = new Set<number>();
-    return [...JSON.parse(localStorage.getItem(storageItemName) || '[]')]
-      .map(({ x, y }: WeightData) => ({ x: new Date(x), y }))
-      .filter((item: WeightData) => !seen.has(+item.x) && seen.add(+item.x));
+    return fillLinearDaily(
+      [...JSON.parse(localStorage.getItem(storageItemName) || '[]')]
+        .map(({ x, y }: WeightData) => ({
+          x: new Date(x),
+          y: y * this.weightMultiplier,
+        }))
+        .filter((item: WeightData) => !seen.has(+item.x) && seen.add(+item.x)),
+    );
   }
 
   showDialog(dialog: HTMLDialogElement) {
@@ -225,10 +268,13 @@ export class WeightTrackerComponent implements OnInit {
           color: 'rgba(54,158,173,.7)',
           xValueFormatString: 'DDD, MM/DD/YYYY',
           toolTipContent: `{y} ${units}<br>{x}`,
-          dataPoints: this.weightData().map((w) => ({
-            ...w,
-            click: this.handleChartClick.bind(this),
-          })),
+          dataPoints: this.weightData().map((w) => {
+            return {
+              ...w,
+              color: this.getHSLA(w.x.getDay(), w.filledIn ? 0.2 : 1),
+              click: this.handleChartClick.bind(this),
+            };
+          }),
         },
         {
           visible: true,
@@ -286,12 +332,16 @@ export class WeightTrackerComponent implements OnInit {
   }
 
   public updateWeights() {
+    if (this.form.invalid) return;
+
     this.weightData.update((state) => [
       ...state.filter(({ x }) => +x !== +this.form.value.x!),
       this.form.value as WeightData,
     ]);
     this.projected.set(
-      this.slidingProjections(this.configForm.get('windowSize')?.value),
+      this.slidingProjections(
+        this.configForm.get('projectionSampleSize')?.value,
+      ),
     );
     localStorage.setItem(storageItemName, JSON.stringify(this.weightData()));
     this.todayIsRecorded.set(this.getTodayIsRecorded());
@@ -316,12 +366,16 @@ export class WeightTrackerComponent implements OnInit {
     );
   }
 
+  private getHSLA(i: number, o = 1.0) {
+    return `hsla(${(i / 6) * 330}, 100%, 40%, ${o})`;
+  }
+
   /**
    *
-   * @param windowSize number
-   * @returns an array where each item is the projection of the available data of the last @windowSize points
+   * @param projectionSampleSize number
+   * @returns an array where each item is the projection of the available data of the last @projectionSampleSize points
    */
-  private slidingProjections(windowSize = 7): WeightData[] {
+  private slidingProjections(projectionSampleSize = 7): WeightData[] {
     const DAY = 24 * 60 * 60 * 1000;
 
     function regress(
@@ -350,7 +404,7 @@ export class WeightTrackerComponent implements OnInit {
 
     return data
       .map((_, i) => {
-        const start = Math.max(0, i - windowSize + 1);
+        const start = Math.max(0, i - projectionSampleSize + 1);
         const window = data.slice(start, i + 1);
 
         const xs = window.map((d) => d.x.getTime());
@@ -423,3 +477,5 @@ export class WeightTrackerComponent implements OnInit {
     return [linePoints.at(0), linePoints.at(-1)];
   }
 }
+
+// [{"x":"2025-07-21T05:00:00.000Z","y":208.1},{"x":"2025-07-23T05:00:00.000Z","y":210.4},{"x":"2025-07-24T05:00:00.000Z","y":209.9},{"x":"2025-07-25T05:00:00.000Z","y":207},{"x":"2025-07-26T05:00:00.000Z","y":208},{"x":"2025-07-28T05:00:00.000Z","y":207.7},{"x":"2025-07-29T05:00:00.000Z","y":208.3},{"x":"2025-07-30T05:00:00.000Z","y":205.4},{"x":"2025-08-01T05:00:00.000Z","y":210.3},{"x":"2025-08-03T05:00:00.000Z","y":209.7},{"x":"2025-08-04T05:00:00.000Z","y":208.3},{"x":"2025-08-05T05:00:00.000Z","y":207.6},{"x":"2025-08-06T05:00:00.000Z","y":207.1},{"x":"2025-08-30T05:00:00.000Z","y":204.2},{"x":"2025-08-31T05:00:00.000Z","y":206.6},{"x":"2025-09-01T05:00:00.000Z","y":205.6},{"x":"2025-09-02T05:00:00.000Z","y":205.8},{"x":"2025-09-03T05:00:00.000Z","y":204},{"x":"2025-09-04T05:00:00.000Z","y":204.8},{"x":"2025-09-05T05:00:00.000Z","y":204.3},{"x":"2025-09-06T05:00:00.000Z","y":203.4},{"x":"2025-09-08T05:00:00.000Z","y":206},{"x":"2025-09-09T05:00:00.000Z","y":205.9},{"x":"2025-09-10T05:00:00.000Z","y":204.8},{"x":"2025-09-11T05:00:00.000Z","y":203.8},{"x":"2025-09-12T05:00:00.000Z","y":201.9}]
