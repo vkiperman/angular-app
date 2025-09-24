@@ -2,8 +2,8 @@
   <div class="legend">
     @for (item of legend; track item.label) {
       <span class="legend-item">
-        <span class="legend-color" [style.background]="item.color"></span>
-        <span class="legend-label">{{ item.label }}</span>
+        <span class="legend-color" [style.background]="item?.color"></span>
+        <span class="legend-label">{{ item?.label }}</span>
       </span>
     }
   </div>

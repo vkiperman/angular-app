@@ -27,11 +27,12 @@ import { DiffComponent } from './components/diff/diff.component';
 import { StatsComponent } from './components/stats/stats.component';
 import { WeightTrackerConfigState } from './store/weight-tracker-config.reducer';
 import { WeightTrackerConfigStore } from './store/weight-tracker-config.store';
+import { fillLinearDaily, WeightData } from './weight-tracker.utils';
 
-interface WeightData {
-  x: Date;
-  y: number;
-}
+// interface WeightData {
+//   x: Date;
+//   y: number;
+// }
 
 export const storageItemName = 'weight-tracker';
 
@@ -52,8 +53,6 @@ export class WeightTrackerComponent implements OnInit {
   private store = inject(WeightTrackerConfigStore);
   public weightTrackerConfig = signal<WeightTrackerConfigState | null>(null);
   public weightTrackerConfig$!: Observable<WeightTrackerConfigState>;
-
-  public legend: { color: string; label: string }[] = [];
 
   public form = new FormGroup({
     x: new FormControl<Date>(
@@ -77,6 +76,13 @@ export class WeightTrackerComponent implements OnInit {
     'Friday',
     'Saturday',
   ].map((label, value) => ({ value: value - 1, label }));
+
+  public legend: { color: string; label: string }[] = this.weekdays
+    .slice(1)
+    .map(({ label }, i) => ({
+      label,
+      color: this.getHSLA(i),
+    }));
 
   public byWeekday!: FormGroup;
   public byWeekday$!: Observable<number>;
@@ -189,12 +195,14 @@ export class WeightTrackerComponent implements OnInit {
 
   private getDedupedStoredData() {
     const seen = new Set<number>();
-    return [...JSON.parse(localStorage.getItem(storageItemName) || '[]')]
-      .map(({ x, y }: WeightData) => ({
-        x: new Date(x),
-        y: y * this.weightMultiplier,
-      }))
-      .filter((item: WeightData) => !seen.has(+item.x) && seen.add(+item.x));
+    return fillLinearDaily(
+      [...JSON.parse(localStorage.getItem(storageItemName) || '[]')]
+        .map(({ x, y }: WeightData) => ({
+          x: new Date(x),
+          y: y * this.weightMultiplier,
+        }))
+        .filter((item: WeightData) => !seen.has(+item.x) && seen.add(+item.x)),
+    );
   }
 
   showDialog(dialog: HTMLDialogElement) {
@@ -261,13 +269,9 @@ export class WeightTrackerComponent implements OnInit {
           xValueFormatString: 'DDD, MM/DD/YYYY',
           toolTipContent: `{y} ${units}<br>{x}`,
           dataPoints: this.weightData().map((w) => {
-            const day = w.x.getDay();
-            const color = `hsla(${(day / 6) * 360}, 100%, 40%, 1.00)`;
-            const { label } = this.weekdays[day + 1];
-            this.legend[day] = { label, color };
             return {
               ...w,
-              color,
+              color: this.getHSLA(w.x.getDay(), w.filledIn ? 0.2 : 1),
               click: this.handleChartClick.bind(this),
             };
           }),
@@ -360,6 +364,10 @@ export class WeightTrackerComponent implements OnInit {
           new Date(x).getDate(),
         ).getTime() === d.getTime(),
     );
+  }
+
+  private getHSLA(i: number, o = 1.0) {
+    return `hsla(${(i / 6) * 330}, 100%, 40%, ${o})`;
   }
 
   /**

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
+import { fillLinearDaily } from '../../weight-tracker.utils';
 
 @Component({
   selector: 'diff',
@@ -38,8 +39,8 @@ export class DiffComponent {
   ]);
 
   public getDiff(dist: number = new Date().getDate() + 1) {
-    const dataPoints = this.data();
-    const value = dataPoints.at(-1)?.y! - dataPoints.at(-dist - 1)?.y!;
+    const dataPoints = fillLinearDaily(this.data());
+    let value: number = dataPoints.at(-1)?.y! - dataPoints.at(-dist - 1)?.y!;
     return {
       value: isNaN(value) ? 0 : Math.abs(value),
       className: value <= 0 ? 'down' : 'up',
