@@ -5,20 +5,29 @@
   margin-right: 0.55em;
   cursor: default;
 
-  .up {
-    color: red;
-    font-weight: 700;
-    &::after {
-      content: " ↑";
-      position: absolute;
+  :not(.label) {
+    &.up {
+      color: red;
+      font-weight: 700;
+      &::after {
+        content: " ↑";
+        position: absolute;
+      }
+    }
+    &.down {
+      color: green;
+      font-weight: 700;
+      &::after {
+        content: " ↓";
+        position: absolute;
+      }
+    }
+    &.none {
+      color: transparent;
+      font-weight: 700;
     }
   }
-  .down {
-    color: green;
-    font-weight: 700;
-    &::after {
-      content: " ↓";
-      position: absolute;
-    }
+  .label.none {
+    color: #00000032;
   }
 }

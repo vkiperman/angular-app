@@ -27,8 +27,6 @@ export class WeatherPipe implements PipeTransform {
       }),
     );
 
-    console.log('getForecastPeriods');
-
     return {
       zoomEnabled: true,
       animationEnabled: true,
