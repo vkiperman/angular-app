@@ -1,12 +1,36 @@
+.weight-tracker {
+  display: flex;
+  gap: 12px;
+  flex-direction: column;
+}
+
+.weight-entry-form {
+  display: flex;
+  gap: 4px;
+  flex-direction: column;
+  background-color: rgba(54, 158, 173, 0.6);
+  padding: 8px 16px 8px 24px;
+  border-top-right-radius: 8px 8px;
+  border-bottom-right-radius: 8px 8px;
+  transform: translate(-16px, 0);
+  margin-right: -16px;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+}
+
 form {
   display: flex;
   gap: 4px;
   align-items: flex-end;
   align-self: flex-start;
+  label {
+    display: flex;
+    gap: 4px;
+    flex-direction: column;
+  }
 }
 .dashboard {
   display: flex;
-  gap: 9px;
+  gap: 16px;
 
   .sep {
     border-right: 1px solid #aaa;
@@ -58,12 +82,7 @@ form {
       }
     }
   }
-  // a.test {
-  //   position: absolute;
-  //   font-size: 3.3em;
-  //   line-height: 1;
-  //   color: green;
-  // }
+
   a.click {
     cursor: pointer;
     position: relative;
@@ -107,4 +126,15 @@ form {
 input.invalid {
   border-color: rgb(218, 0, 0);
   background-color: hsl(0, 100%, 92%);
+}
+
+input {
+  padding: 3px 6px;
+  border: 1px solid black;
+}
+button {
+  border-radius: 100vw;
+  border: 1px solid black;
+  padding: 3px 9px;
+  margin: 0 -3px;
 }

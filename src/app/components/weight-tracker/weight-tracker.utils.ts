@@ -1,7 +1,3 @@
-import { DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, map, timer } from 'rxjs';
-
 export interface WeightData {
   x: Date;
   y: number;
@@ -189,14 +185,12 @@ export function slidingProjections(
     .filter(({ x }, i, src) => i === src.length - 1 || +x < +src[i + 1]?.x);
 }
 
-export function setupDateCheck(destroyRef: DestroyRef) {
-  const hourlyInterval = 1000 * 60 * 60; // Every hour
-  const msUntilNextHour =
-    hourlyInterval - (new Date().getTime() % hourlyInterval);
+// export function setupDateCheck() {
+//   const hourlyInterval = 9000 * 60; // Every nine minutes
 
-  return timer(msUntilNextHour, hourlyInterval).pipe(
-    map(() => new Date()),
-    filter((now) => now.getHours() + now.getMinutes() === 0),
-    takeUntilDestroyed(destroyRef),
-  );
-}
+//   return interval(hourlyInterval).pipe(
+//     map(() => new Date()),
+//     filter((now) => now.getHours() === 0),
+//     startWith(0),
+//   );
+// }

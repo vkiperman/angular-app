@@ -4,6 +4,7 @@ import {
   computed,
   DestroyRef,
   inject,
+  OnDestroy,
   OnInit,
   signal,
   ViewChild,
@@ -22,7 +23,6 @@ import {
   map,
   Observable,
   startWith,
-  Subscription,
   tap,
 } from 'rxjs';
 import { ConfigFormComponent } from './components/config-form/config-form.component';
@@ -35,7 +35,6 @@ import {
   fillLinearDaily,
   getHSLA,
   lineOfBestFit,
-  setupDateCheck,
   slidingProjections,
   WeightData,
 } from './weight-tracker.utils';
@@ -56,7 +55,7 @@ export const storageItemName = 'weight-tracker';
   templateUrl: './weight-tracker.component.html',
   styleUrl: './weight-tracker.component.scss',
 })
-export class WeightTrackerComponent implements OnInit {
+export class WeightTrackerComponent implements OnInit, OnDestroy {
   private destroyRef = inject(DestroyRef);
   private store = inject(WeightTrackerConfigStore);
   public weightTrackerConfig = signal<WeightTrackerConfigState | null>(null);
@@ -116,7 +115,11 @@ export class WeightTrackerComponent implements OnInit {
   @ViewChild(CanvasJSChart)
   public canvasJSChart!: CanvasJSChart;
 
-  private checkTodayIsRecorded!: Subscription;
+  // private checkTodayIsRecorded!: Subscription;
+
+  ngOnDestroy(): void {
+    debugger;
+  }
 
   public ngOnInit(): void {
     this.weightTrackerConfig$ = this.store.getState().pipe(
@@ -207,10 +210,10 @@ export class WeightTrackerComponent implements OnInit {
     );
     this.todayIsRecorded.set(this.getTodayIsRecorded());
 
-    this.checkTodayIsRecorded?.unsubscribe();
-    this.checkTodayIsRecorded = setupDateCheck(this.destroyRef).subscribe(() =>
-      this.todayIsRecorded.set(false),
-    );
+    // this.checkTodayIsRecorded?.unsubscribe();
+    // this.checkTodayIsRecorded = setupDateCheck()
+    //   .pipe(takeUntilDestroyed(this.destroyRef))
+    //   .subscribe(() => this.todayIsRecorded.set(false));
 
     this.form.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -269,6 +272,8 @@ export class WeightTrackerComponent implements OnInit {
     };
   }
 
+  private visible: boolean[] = [true, true, false];
+
   public data = computed(() => {
     const units = this.weightTrackerConfig()?.units ? ' KG' : ' lbs';
     return {
@@ -293,14 +298,14 @@ export class WeightTrackerComponent implements OnInit {
       legend: {
         cursor: 'pointer',
         fontSize: 12,
-        itemclick: this.itemclick,
+        itemclick: this.itemclick.bind(this),
       },
       toolTip: {
         shared: false,
       },
       data: [
         {
-          visible: true,
+          visible: this.visible[0],
           type: 'splineArea',
           name: 'Weight',
           showInLegend: true,
@@ -314,7 +319,7 @@ export class WeightTrackerComponent implements OnInit {
           })),
         },
         {
-          visible: true,
+          visible: this.visible[1],
           type: 'splineArea',
           name: 'Projected Weight',
           showInLegend: true,
@@ -325,7 +330,7 @@ export class WeightTrackerComponent implements OnInit {
           lineDashType: 'dash',
         },
         {
-          visible: false,
+          visible: this.visible[2],
           type: 'line',
           name: 'Line of best fit',
           showInLegend: true,
@@ -357,10 +362,10 @@ export class WeightTrackerComponent implements OnInit {
       render: () => void;
     };
   }) {
-    debugger;
     const visible = e.dataSeries.visible === undefined || e.dataSeries.visible;
 
-    e.dataSeries.visible = !visible;
+    this.visible[e.dataSeriesIndex] = !visible;
+    e.dataSeries.visible = this.visible[e.dataSeriesIndex];
 
     e.chart.render();
   }
@@ -368,8 +373,14 @@ export class WeightTrackerComponent implements OnInit {
   public updateWeights() {
     if (this.form.invalid) return;
 
+    this.dynamicRange
+      .get('range')
+      ?.setValue(this.getDedupedStoredData().length);
+
     this.weightData.update((state) => [
-      ...state.filter(({ x }) => +x !== +this.form.value.x!),
+      ...this.getDedupedStoredData().filter(
+        ({ x }) => +x !== +this.form.value.x!,
+      ),
       this.form.value as WeightData,
     ]);
     this.projected.set(
@@ -385,9 +396,6 @@ export class WeightTrackerComponent implements OnInit {
     this.todayIsRecorded.set(this.getTodayIsRecorded());
 
     this.canvasJSChart.chart.render();
-    this.dynamicRange
-      .get('range')
-      ?.setValue(this.getDedupedStoredData().length);
   }
 
   public getTodayIsRecorded() {
