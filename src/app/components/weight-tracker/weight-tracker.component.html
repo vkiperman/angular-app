@@ -1,24 +1,26 @@
-@if (weightTrackerConfig$ | async; as weightTrackerConfig) {
-  <div class="legend">
-    @for (item of legend; track item.label) {
-      <span class="legend-item">
-        <span class="legend-color" [style.background]="item?.color"></span>
-        <span class="legend-label">{{ item?.label }}</span>
-      </span>
-    }
-  </div>
-  <canvasjs-chart
-    [options]="data()"
-    (chartInstance)="handleChartReady($event)"
-  />
+<div class="weight-tracker">
+  @if (weightTrackerConfig$ | async; as weightTrackerConfig) {
+    <div>
+      <div class="legend">
+        @for (item of legend; track item.label) {
+          <span class="legend-item">
+            <span class="legend-color" [style.background]="item?.color"></span>
+            <span class="legend-label">{{ item?.label }}</span>
+          </span>
+        }
+      </div>
+      <canvasjs-chart
+        [options]="data()"
+        (chartInstance)="handleChartReady($event)"
+      />
+    </div>
 
-  <div class="dashboard">
-    <ng-container>
-      <div>
+    <div class="dashboard">
+      <div class="weight-entry-form">
         @if (!todayIsRecorded()) {
           <form [formGroup]="form" (submit)="updateWeights()">
             <label>
-              Enter Weight<br />
+              Enter Weight
               <input
                 [class.invalid]="
                   form.get('y')?.invalid && form.get('y')?.touched
@@ -31,7 +33,6 @@
             </label>
             <button>Save</button>
           </form>
-          <div>{{ form.get("x")?.value | date }}</div>
           @if (form.get("y")?.errors; as errors) {
             <div>
               {{ errors?.["tooLow"] && "Weight seems too low." }}
@@ -39,80 +40,104 @@
             </div>
           }
         } @else {
+          <div>
+            <b>{{ form.get("y")?.value }} lbs</b>
+          </div>
           <button (click)="todayIsRecorded.set(false)">Edit weight</button>
         }
+        <div>{{ form.get("x")?.value | date }}</div>
       </div>
-      <div class="sep"></div>
-    </ng-container>
+      <!-- <div class="sep"></div> -->
 
-    @if (configForm$ | async; as config) {
-      <!-- <pre>{{ config | json }}</pre> -->
-      <form [formGroup]="configForm">
-        <datalist id="values">
-          <option value="2" label="2"></option>
-          <option value="4" label="4"></option>
-          <option value="6" label="6"></option>
-          <option value="8" label="8"></option>
-          <option value="10" label="10"></option>
-          <option value="12" label="12"></option>
-          <option value="14" label="14"></option>
-        </datalist>
-        <label>
-          Projection Precision (last
-          {{ config.projectionSampleSize }} weigh-ins)<br />
-          <input
-            list="values"
-            type="range"
-            formControlName="projectionSampleSize"
-            min="2"
-            max="14"
-          />
-        </label>
-      </form>
-      <div class="sep"></div>
-    }
+      @if (configForm$ | async; as config) {
+        <!-- <pre>{{ config | json }}</pre> -->
+        <div class="weight-tracker">
+          <form [formGroup]="configForm">
+            <datalist id="values">
+              <option value="2" label="2"></option>
+              <option value="4" label="4"></option>
+              <option value="6" label="6"></option>
+              <option value="8" label="8"></option>
+              <option value="10" label="10"></option>
+              <option value="12" label="12"></option>
+              <option value="14" label="14"></option>
+            </datalist>
+            <label>
+              Projection Precision (last
+              {{ config.projectionSampleSize }} weigh-ins)<br />
+              <input
+                list="values"
+                type="range"
+                formControlName="projectionSampleSize"
+                min="2"
+                max="14"
+              />
+            </label>
+          </form>
+          <form [formGroup]="dynamicRange">
+            <dynamic-range-input
+              min="7"
+              [max]="getDedupedStoredData().length"
+              [label]="
+                'Scope: Last ' + dynamicRange.get('range')?.value + ' entries'
+              "
+            />
+          </form>
+        </div>
+        <div class="sep"></div>
+      }
 
-    @if (this.data().data[0].dataPoints.length > 1) {
-      <diff [data]="this.data().data[0].dataPoints" />
-      <div class="sep"></div>
-    }
+      @if (this.data().data[0].dataPoints.length > 1) {
+        <diff [data]="this.data().data[0].dataPoints" />
+        <div class="sep"></div>
+      }
 
-    <stats
-      [data]="data().data[0].dataPoints"
-      [canvasJSChart]="canvasJSChart || {}"
-    />
-    <!-- <div class="sep"></div> -->
+      <stats
+        [data]="data().data[0].dataPoints"
+        [canvasJSChart]="canvasJSChart || {}"
+      />
 
-    <!-- WIP -->
-    <!-- paused because the graph won't refresh. looking into it -->
-    <!-- @if (byWeekday$ | async) {
-      <form [formGroup]="byWeekday">
-        <label
-          >By Weekday<br />
-          <select formControlName="weekday" id="weekday">
-            @for (opt of weekdays; track $index) {
-              <option [value]="opt.value">{{ opt.label }}</option>
-            }
-          </select>
-        </label>
-      </form>
-    } -->
+      <!-- <div class="sep"></div>
+      <form [formGroup]="dynamicRange">
+        <dynamic-range-input
+          min="7"
+          [max]="getDedupedStoredData().length"
+          [label]="'Scope: Last ' + dynamicRange.get('range')?.value + ' entries'"
+        />
+      </form> -->
 
-    <div class="config">
-      <dialog #config>
-        <header>
-          <h2>⚙ Settings</h2>
-          <span class="close" (click)="hideDialog(config)">×</span>
-        </header>
-        @if (config.open) {
-          <config-form (saved)="hideDialog(config)">
-            <button type="button" (click)="hideDialog(config)">Cancel</button>
-          </config-form>
-        }
-      </dialog>
-      <!-- <a class="test">⚙</a> -->
-      <a class="click" (click)="showDialog(config)">⚙</a>
+      <!-- <div class="sep"></div> -->
+      <!-- WIP -->
+      <!-- paused because the graph won't refresh. looking into it -->
+      <!-- @if (byWeekday$ | async) {
+        <form [formGroup]="byWeekday">
+          <label
+            >By Weekday<br />
+            <select formControlName="weekday" id="weekday">
+              @for (opt of weekdays; track $index) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </label>
+        </form>
+      } -->
+
+      <div class="config">
+        <dialog #config>
+          <header>
+            <h2>⚙ Settings</h2>
+            <span class="close" (click)="hideDialog(config)">×</span>
+          </header>
+          @if (config.open) {
+            <config-form (saved)="hideDialog(config)">
+              <button type="button" (click)="hideDialog(config)">Cancel</button>
+            </config-form>
+          }
+        </dialog>
+        <!-- <a class="test">⚙</a> -->
+        <a class="click" (click)="showDialog(config)">⚙</a>
+      </div>
     </div>
-  </div>
-  <!-- <pre>{{ projected() | json }}</pre> -->
-}
+    <!-- <pre>{{ projected() | json }}</pre> -->
+  }
+</div>

@@ -43,7 +43,7 @@ export class DiffComponent {
     let value: number = dataPoints.at(-1)?.y! - dataPoints.at(-dist - 1)?.y!;
     return {
       value: isNaN(value) ? 0 : Math.abs(value),
-      className: value <= 0 ? 'down' : 'up',
+      className: isNaN(value) ? 'none' : value <= 0 ? 'down' : 'up',
     };
   }
 }

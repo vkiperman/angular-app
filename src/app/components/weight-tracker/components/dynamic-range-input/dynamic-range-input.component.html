@@ -1,0 +1,18 @@
+<ng-container [formGroup]="formGroup">
+  <datalist id="rangevalues">
+    @for (val of rangevalues; track $index) {
+      <option [value]="val" [label]="val"></option>
+    }
+  </datalist>
+  <label
+    >{{ label() }}
+    <br />
+    <input
+      list="rangevalues"
+      type="range"
+      formControlName="range"
+      [min]="min()"
+      [max]="max()"
+    />
+  </label>
+</ng-container>

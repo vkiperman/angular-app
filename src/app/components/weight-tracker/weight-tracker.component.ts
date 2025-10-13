@@ -2,11 +2,14 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
+  DestroyRef,
   inject,
+  OnDestroy,
   OnInit,
   signal,
   ViewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
   CanvasJSAngularChartsModule,
@@ -24,15 +27,17 @@ import {
 } from 'rxjs';
 import { ConfigFormComponent } from './components/config-form/config-form.component';
 import { DiffComponent } from './components/diff/diff.component';
+import { DynamicRangeInputComponent } from './components/dynamic-range-input/dynamic-range-input.component';
 import { StatsComponent } from './components/stats/stats.component';
 import { WeightTrackerConfigState } from './store/weight-tracker-config.reducer';
 import { WeightTrackerConfigStore } from './store/weight-tracker-config.store';
-import { fillLinearDaily, WeightData } from './weight-tracker.utils';
-
-// interface WeightData {
-//   x: Date;
-//   y: number;
-// }
+import {
+  fillLinearDaily,
+  getHSLA,
+  lineOfBestFit,
+  slidingProjections,
+  WeightData,
+} from './weight-tracker.utils';
 
 export const storageItemName = 'weight-tracker';
 
@@ -45,11 +50,13 @@ export const storageItemName = 'weight-tracker';
     DiffComponent,
     ReactiveFormsModule,
     StatsComponent,
+    DynamicRangeInputComponent,
   ],
   templateUrl: './weight-tracker.component.html',
   styleUrl: './weight-tracker.component.scss',
 })
-export class WeightTrackerComponent implements OnInit {
+export class WeightTrackerComponent implements OnInit, OnDestroy {
+  private destroyRef = inject(DestroyRef);
   private store = inject(WeightTrackerConfigStore);
   public weightTrackerConfig = signal<WeightTrackerConfigState | null>(null);
   public weightTrackerConfig$!: Observable<WeightTrackerConfigState>;
@@ -64,6 +71,10 @@ export class WeightTrackerComponent implements OnInit {
     ),
     y: new FormControl<number | null>(null),
     // w: new FormControl(new Date().getDay() < 1 || new Date().getDay() > 5),
+  });
+
+  public dynamicRange = new FormGroup({
+    range: new FormControl(),
   });
 
   public weekdays = [
@@ -81,7 +92,7 @@ export class WeightTrackerComponent implements OnInit {
     .slice(1)
     .map(({ label }, i) => ({
       label,
-      color: this.getHSLA(i),
+      color: getHSLA(i),
     }));
 
   public byWeekday!: FormGroup;
@@ -93,7 +104,8 @@ export class WeightTrackerComponent implements OnInit {
   private weightData = signal<WeightData[]>([]);
 
   public readonly projected = signal(
-    this.slidingProjections(
+    slidingProjections(
+      this.weightData(),
       this.configForm?.get('projectionSampleSize')?.value!,
     ),
   );
@@ -102,6 +114,12 @@ export class WeightTrackerComponent implements OnInit {
 
   @ViewChild(CanvasJSChart)
   public canvasJSChart!: CanvasJSChart;
+
+  // private checkTodayIsRecorded!: Subscription;
+
+  ngOnDestroy(): void {
+    debugger;
+  }
 
   public ngOnInit(): void {
     this.weightTrackerConfig$ = this.store.getState().pipe(
@@ -117,7 +135,9 @@ export class WeightTrackerComponent implements OnInit {
     this.configForm$ = this.configForm.valueChanges.pipe(
       distinctUntilKeyChanged('projectionSampleSize'),
       tap(({ projectionSampleSize }) => {
-        this.projected.set(this.slidingProjections(projectionSampleSize));
+        this.projected.set(
+          slidingProjections(this.weightData(), projectionSampleSize),
+        );
         this.canvasJSChart.chart.render();
       }),
       startWith(this.configForm.value),
@@ -130,17 +150,11 @@ export class WeightTrackerComponent implements OnInit {
     this.byWeekday$ = this.byWeekday.valueChanges.pipe(
       map(({ weekday }) => weekday),
       tap((weekday) => {
-        console.log(
-          this.getDedupedStoredData().filter(
-            ({ x }) => +weekday < 0 || x.getDay() === +weekday,
-          ),
+        const filtered = this.getDedupedStoredData().filter(
+          ({ x }) => +weekday < 0 || x.getDay() === +weekday,
         );
-        this.weightData.update(() =>
-          this.getDedupedStoredData().filter(
-            ({ x }) => !+weekday || x.getDay() === +weekday,
-          ),
-        );
-        this.canvasJSChart.chart.render();
+        this.weightData.set(filtered);
+        setTimeout(() => this.canvasJSChart.chart.render(), 1);
       }),
       startWith(-1),
     );
@@ -168,32 +182,60 @@ export class WeightTrackerComponent implements OnInit {
         ).toFixed(1),
       );
 
+    this.dynamicRange.valueChanges
+      .pipe(
+        distinctUntilChanged(deepEqual),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((v) => {
+        this.weightData.set(this.getDedupedStoredData().slice(-v.range));
+
+        this.projected.set(
+          slidingProjections(
+            this.weightData(),
+            this.configForm?.get('projectionSampleSize')?.value!,
+          ),
+        );
+      });
+
+    this.dynamicRange
+      .get('range')
+      ?.setValue(this.getDedupedStoredData().length);
+
     this.projected.set(
-      this.slidingProjections(
+      slidingProjections(
+        this.weightData(),
         this.configForm?.get('projectionSampleSize')?.value,
       ),
     );
     this.todayIsRecorded.set(this.getTodayIsRecorded());
 
-    this.form.valueChanges.subscribe(({ x, y }) => {
-      const now = new Date();
-      const sinceLastEntry = Math.max(
-        1,
-        now.getDate() -
-          this.weightData()[this.weightData().length - 1]?.x.getDate(),
-      );
+    // this.checkTodayIsRecorded?.unsubscribe();
+    // this.checkTodayIsRecorded = setupDateCheck()
+    //   .pipe(takeUntilDestroyed(this.destroyRef))
+    //   .subscribe(() => this.todayIsRecorded.set(false));
 
-      if (sinceLastEntry >= 14) return; // skip validation if last entry was 2+ weeks ago
-      const prevWeight = this.weightData()[this.weightData().length - 1]?.y;
-      if (y && y < prevWeight - 14 * sinceLastEntry)
-        return this.form.get('y')?.setErrors({ tooLow: true });
-      if (y && y > prevWeight + 14 * sinceLastEntry)
-        return this.form.get('y')?.setErrors({ tooHigh: true });
-      this.form.get('y')?.setErrors(null);
-    });
+    this.form.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ y }) => {
+        const now = new Date();
+        const sinceLastEntry = Math.max(
+          1,
+          now.getDate() -
+            this.weightData()[this.weightData().length - 1]?.x.getDate(),
+        );
+
+        if (sinceLastEntry >= 14) return; // skip validation if last entry was 2+ weeks ago
+        const prevWeight = this.weightData()[this.weightData().length - 1]?.y;
+        if (y && y < prevWeight - 14 * sinceLastEntry)
+          return this.form.get('y')?.setErrors({ tooLow: true });
+        if (y && y > prevWeight + 14 * sinceLastEntry)
+          return this.form.get('y')?.setErrors({ tooHigh: true });
+        this.form.get('y')?.setErrors(null);
+      });
   }
 
-  private getDedupedStoredData() {
+  public getDedupedStoredData() {
     const seen = new Set<number>();
     return fillLinearDaily(
       [...JSON.parse(localStorage.getItem(storageItemName) || '[]')]
@@ -230,6 +272,8 @@ export class WeightTrackerComponent implements OnInit {
     };
   }
 
+  private visible: boolean[] = [true, true, false];
+
   public data = computed(() => {
     const units = this.weightTrackerConfig()?.units ? ' KG' : ' lbs';
     return {
@@ -254,30 +298,28 @@ export class WeightTrackerComponent implements OnInit {
       legend: {
         cursor: 'pointer',
         fontSize: 12,
-        itemclick: this.itemclick,
+        itemclick: this.itemclick.bind(this),
       },
       toolTip: {
         shared: false,
       },
       data: [
         {
-          visible: true,
+          visible: this.visible[0],
           type: 'splineArea',
           name: 'Weight',
           showInLegend: true,
           color: 'rgba(54,158,173,.7)',
           xValueFormatString: 'DDD, MM/DD/YYYY',
           toolTipContent: `{y} ${units}<br>{x}`,
-          dataPoints: this.weightData().map((w) => {
-            return {
-              ...w,
-              color: this.getHSLA(w.x.getDay(), w.filledIn ? 0.2 : 1),
-              click: this.handleChartClick.bind(this),
-            };
-          }),
+          dataPoints: this.weightData().map((w) => ({
+            ...w,
+            color: getHSLA(w.x.getDay(), w.filledIn ? 0.2 : 1),
+            click: this.handleChartClick.bind(this),
+          })),
         },
         {
-          visible: true,
+          visible: this.visible[1],
           type: 'splineArea',
           name: 'Projected Weight',
           showInLegend: true,
@@ -288,14 +330,14 @@ export class WeightTrackerComponent implements OnInit {
           lineDashType: 'dash',
         },
         {
-          visible: false,
+          visible: this.visible[2],
           type: 'line',
           name: 'Line of best fit',
           showInLegend: true,
           color: 'rgba(0, 104, 120, 0.85)',
           xValueFormatString: 'MM/DD/YYYY',
           toolTipContent: `{n} ${units}<br>{x}`,
-          dataPoints: this.lineOfBestFit(),
+          dataPoints: lineOfBestFit(this.weightData()),
           lineDashType: 'dash',
         },
       ],
@@ -321,12 +363,9 @@ export class WeightTrackerComponent implements OnInit {
     };
   }) {
     const visible = e.dataSeries.visible === undefined || e.dataSeries.visible;
-    // if (e.dataSeriesIndex === 2)
-    //   e.chart.data
-    //     .filter((_, i) => i !== e.dataSeriesIndex)
-    //     .forEach(({ options }) => (options.visible = visible));
 
-    e.dataSeries.visible = !visible;
+    this.visible[e.dataSeriesIndex] = !visible;
+    e.dataSeries.visible = this.visible[e.dataSeriesIndex];
 
     e.chart.render();
   }
@@ -334,16 +373,26 @@ export class WeightTrackerComponent implements OnInit {
   public updateWeights() {
     if (this.form.invalid) return;
 
+    this.dynamicRange
+      .get('range')
+      ?.setValue(this.getDedupedStoredData().length);
+
     this.weightData.update((state) => [
-      ...state.filter(({ x }) => +x !== +this.form.value.x!),
+      ...this.getDedupedStoredData().filter(
+        ({ x }) => +x !== +this.form.value.x!,
+      ),
       this.form.value as WeightData,
     ]);
     this.projected.set(
-      this.slidingProjections(
+      slidingProjections(
+        this.weightData(),
         this.configForm.get('projectionSampleSize')?.value,
       ),
     );
-    localStorage.setItem(storageItemName, JSON.stringify(this.weightData()));
+    localStorage.setItem(
+      storageItemName,
+      JSON.stringify(this.weightData().filter(({ filledIn }) => !filledIn)),
+    );
     this.todayIsRecorded.set(this.getTodayIsRecorded());
 
     this.canvasJSChart.chart.render();
@@ -365,117 +414,4 @@ export class WeightTrackerComponent implements OnInit {
         ).getTime() === d.getTime(),
     );
   }
-
-  private getHSLA(i: number, o = 1.0) {
-    return `hsla(${(i / 6) * 330}, 100%, 40%, ${o})`;
-  }
-
-  /**
-   *
-   * @param projectionSampleSize number
-   * @returns an array where each item is the projection of the available data of the last @projectionSampleSize points
-   */
-  private slidingProjections(projectionSampleSize = 7): WeightData[] {
-    const DAY = 24 * 60 * 60 * 1000;
-
-    function regress(
-      xs: number[],
-      ys: number[],
-    ): { m: number; b: number; ok: boolean } {
-      const n = xs.length;
-      if (n < 2) return { m: 0, b: ys[n - 1], ok: false };
-
-      const meanX = xs.reduce((a, b) => a + b, 0) / n;
-      const meanY = ys.reduce((a, b) => a + b, 0) / n;
-
-      let num = 0;
-      let den = 0;
-      for (let i = 0; i < n; i++) {
-        const dx = xs[i] - meanX;
-        num += dx * (ys[i] - meanY);
-        den += dx * dx;
-      }
-
-      if (den === 0) return { m: 0, b: ys[n - 1], ok: false }; // all xs identical
-      const m = num / den;
-      return { m, b: meanY - m * meanX, ok: true };
-    }
-    const data = this.weightData();
-
-    return data
-      .map((_, i) => {
-        const start = Math.max(0, i - projectionSampleSize + 1);
-        const window = data.slice(start, i + 1);
-
-        const xs = window.map((d) => d.x.getTime());
-        const ys = window.map((d) => d.y);
-
-        let nextT: number;
-        if (xs.length >= 2) {
-          const last = xs[xs.length - 1];
-          const prev = xs[xs.length - 2];
-          const gap = Math.max(DAY, last - prev || DAY); // avoid zero/negative gap
-          nextT = last + gap;
-          // } else if (xs.length === 1) {
-          //   nextT = xs[0] + DAY;
-        } else {
-          return data[i];
-        }
-
-        const { m, b, ok } = regress(xs, ys);
-        const yhat = ok ? +(m * nextT + b).toFixed(1) : ys[ys.length - 1];
-
-        return { x: new Date(nextT), y: yhat ?? null };
-      })
-      .filter(({ x }, i, src) => i === src.length - 1 || +x < +src[i + 1]?.x);
-  }
-
-  /**
-   * Returns the best-fit line y = m*x + b for [{x: Date, y: number}] data.
-   * x is treated as milliseconds since epoch.
-   */
-  lineOfBestFit() {
-    const data = this.weightData();
-    if (data.length < 2) {
-      // throw new Error('Need at least 2 points to compute a best-fit line.');
-      return [];
-    }
-
-    // Numeric x and y arrays
-    const { xs, ys } = data.reduce(
-      ({ xs, ys }, { x, y }) => ({
-        xs: [...xs, x.getTime()],
-        ys: [...ys, y],
-      }),
-      { xs: [] as number[], ys: [] as number[] },
-    );
-
-    const n = data.length;
-
-    // Means
-    const meanX = xs.reduce((sum, val) => sum + val, 0) / n;
-    const meanY = ys.reduce((sum, val) => sum + val, 0) / n;
-
-    // Slope (m) and intercept (b)
-    let numerator = 0,
-      denominator = 0;
-    for (let i = 0; i < n; i++) {
-      const dx = xs[i] - meanX;
-      numerator += dx * (ys[i] - meanY);
-      denominator += dx * dx;
-    }
-    const m = numerator / denominator;
-    const b = meanY - m * meanX;
-
-    // Generate y-values for each original x
-    const linePoints = xs.map((x) => ({
-      x: new Date(x),
-      y: m * x + b,
-      n: (m * x + b).toFixed(1),
-    }));
-
-    return [linePoints.at(0), linePoints.at(-1)];
-  }
 }
-
-// [{"x":"2025-07-21T05:00:00.000Z","y":208.1},{"x":"2025-07-23T05:00:00.000Z","y":210.4},{"x":"2025-07-24T05:00:00.000Z","y":209.9},{"x":"2025-07-25T05:00:00.000Z","y":207},{"x":"2025-07-26T05:00:00.000Z","y":208},{"x":"2025-07-28T05:00:00.000Z","y":207.7},{"x":"2025-07-29T05:00:00.000Z","y":208.3},{"x":"2025-07-30T05:00:00.000Z","y":205.4},{"x":"2025-08-01T05:00:00.000Z","y":210.3},{"x":"2025-08-03T05:00:00.000Z","y":209.7},{"x":"2025-08-04T05:00:00.000Z","y":208.3},{"x":"2025-08-05T05:00:00.000Z","y":207.6},{"x":"2025-08-06T05:00:00.000Z","y":207.1},{"x":"2025-08-30T05:00:00.000Z","y":204.2},{"x":"2025-08-31T05:00:00.000Z","y":206.6},{"x":"2025-09-01T05:00:00.000Z","y":205.6},{"x":"2025-09-02T05:00:00.000Z","y":205.8},{"x":"2025-09-03T05:00:00.000Z","y":204},{"x":"2025-09-04T05:00:00.000Z","y":204.8},{"x":"2025-09-05T05:00:00.000Z","y":204.3},{"x":"2025-09-06T05:00:00.000Z","y":203.4},{"x":"2025-09-08T05:00:00.000Z","y":206},{"x":"2025-09-09T05:00:00.000Z","y":205.9},{"x":"2025-09-10T05:00:00.000Z","y":204.8},{"x":"2025-09-11T05:00:00.000Z","y":203.8},{"x":"2025-09-12T05:00:00.000Z","y":201.9}]
