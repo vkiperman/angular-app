@@ -1,0 +1,22 @@
+.dot {
+  width: 20px;
+  height: 20px;
+  background-color: #ffffff33;
+  border: #ffffff44 1px dotted;
+  border-radius: 99vw;
+  transition:
+    background-color 0.6s cubic-bezier(1, 1.78, 0.64, 0.54),
+    transform var(--flip-rate) cubic-bezier(1, 1.78, 0.64, 0.54);
+}
+
+.black {
+  background-color: black;
+  transform: scaleY(1);
+  border-top: #bbb 1px dotted;
+  border-bottom: #111 1px dotted;
+}
+.white {
+  background-color: rgb(226, 255, 110);
+  transform: scaleY(-1);
+  border: rgb(226, 255, 110) 1px dotted;
+}

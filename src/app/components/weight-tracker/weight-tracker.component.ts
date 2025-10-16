@@ -4,7 +4,6 @@ import {
   computed,
   DestroyRef,
   inject,
-  OnDestroy,
   OnInit,
   signal,
   ViewChild,
@@ -55,7 +54,7 @@ export const storageItemName = 'weight-tracker';
   templateUrl: './weight-tracker.component.html',
   styleUrl: './weight-tracker.component.scss',
 })
-export class WeightTrackerComponent implements OnInit, OnDestroy {
+export class WeightTrackerComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private store = inject(WeightTrackerConfigStore);
   public weightTrackerConfig = signal<WeightTrackerConfigState | null>(null);
@@ -114,12 +113,6 @@ export class WeightTrackerComponent implements OnInit, OnDestroy {
 
   @ViewChild(CanvasJSChart)
   public canvasJSChart!: CanvasJSChart;
-
-  // private checkTodayIsRecorded!: Subscription;
-
-  ngOnDestroy(): void {
-    debugger;
-  }
 
   public ngOnInit(): void {
     this.weightTrackerConfig$ = this.store.getState().pipe(

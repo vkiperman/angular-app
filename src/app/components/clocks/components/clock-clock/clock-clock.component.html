@@ -1,0 +1,20 @@
+<div class="container">
+  @if (time$ | async; as time) {
+    <div class="face">
+      <div class="face">
+        <digit [value]="+time.h[0]" />
+        <digit [value]="+time.h[1]" />
+      </div>
+      <div class="divider">:</div>
+      <div class="face">
+        <digit [value]="+time.m[0]" />
+        <digit [value]="+time.m[1]" />
+      </div>
+      <div class="divider">:</div>
+      <div class="face">
+        <digit [value]="+time.s[0]" />
+        <digit [value]="+time.s[1]" />
+      </div>
+    </div>
+  }
+</div>

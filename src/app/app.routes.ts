@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { CalendarComponent } from './components/calendar/calendar.component';
+import { ClocksComponent } from './components/clocks/clocks.component';
 import { LogosComponent } from './components/logos/logos.component';
 import { SpotifyComponent } from './components/spotify/spotify.component';
 import { TypographyComponent } from './components/typography/typography.component';
@@ -26,6 +27,11 @@ export const routes: Routes = [
     path: 'weight-tracker',
     title: 'Weight Tracker',
     component: WeightTrackerComponent,
+  },
+  {
+    path: 'clocks',
+    title: 'Clocks',
+    component: ClocksComponent,
   },
   {
     path: 'spotify',

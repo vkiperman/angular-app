@@ -2,6 +2,8 @@ export interface WeightData {
   x: Date;
   y: number;
   filledIn?: boolean;
+  color?: string;
+  click?: (e: any) => void;
 }
 
 export function getHSLA(i: number, opacity = 1.0) {

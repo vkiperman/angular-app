@@ -1,0 +1,11 @@
+<table>
+  <tbody>
+    @for (row of panels(); track $index) {
+      <tr>
+        @for (cell of row; track $index) {
+          <td [class]="cell"></td>
+        }
+      </tr>
+    }
+  </tbody>
+</table>

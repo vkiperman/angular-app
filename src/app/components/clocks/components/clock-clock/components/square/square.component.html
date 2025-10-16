@@ -1,0 +1,9 @@
+<div class="square">
+  @for (a of angles(); track $index) {
+    <div
+      class="hand"
+      style.transform="rotate({{ a }}deg)"
+      [style.opacity]="a === 135 ? 0.2 : 1"
+    ></div>
+  }
+</div>
