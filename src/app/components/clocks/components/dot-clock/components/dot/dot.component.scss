@@ -1,4 +1,29 @@
+.dot-container {
+  position: relative;
+  .hinge {
+    position: absolute;
+    left: -1px;
+    width: 24px;
+    height: 2px;
+    background-color: rgba(226, 255, 110, 0.75);
+    transform: translateY(10px);
+    transition:
+      background-color 0.6s cubic-bezier(1, 1.78, 0.64, 0.54),
+      transform var(--flip-rate) cubic-bezier(1, 1.78, 0.64, 0.54);
+
+    &.black {
+      background-color: rgb(133, 133, 133);
+    }
+    &.white {
+      background-color: rgb(226, 255, 110);
+    }
+  }
+}
+
 .dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
   background-color: #ffffff33;
@@ -7,16 +32,18 @@
   transition:
     background-color 0.6s cubic-bezier(1, 1.78, 0.64, 0.54),
     transform var(--flip-rate) cubic-bezier(1, 1.78, 0.64, 0.54);
-}
 
-.black {
-  background-color: black;
-  transform: scaleY(1);
-  border-top: #bbb 1px dotted;
-  border-bottom: #111 1px dotted;
-}
-.white {
-  background-color: rgb(226, 255, 110);
-  transform: scaleY(-1);
-  border: rgb(226, 255, 110) 1px dotted;
+  &.black {
+    background-color: black;
+    transform: scaleY(1);
+    border-top: #bbb 1px dotted;
+    border-bottom: #111 1px dotted;
+    color: rgb(226, 255, 110);
+  }
+  &.white {
+    background-color: rgb(226, 255, 110);
+    transform: scaleY(-1);
+    border: rgb(226, 255, 110) 1px dotted;
+    color: black;
+  }
 }

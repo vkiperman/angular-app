@@ -1,6 +1,6 @@
 <div class="weight-tracker">
   @if (weightTrackerConfig$ | async; as weightTrackerConfig) {
-    <div>
+    <div class="formatted-container">
       <div class="legend">
         @for (item of legend; track item.label) {
           <span class="legend-item">
@@ -15,7 +15,7 @@
       />
     </div>
 
-    <div class="dashboard">
+    <div class="dashboard formatted-container">
       <div class="weight-entry-form">
         @if (!todayIsRecorded()) {
           <form [formGroup]="form" (submit)="updateWeights()">
@@ -46,6 +46,9 @@
           <button (click)="todayIsRecorded.set(false)">Edit weight</button>
         }
         <div>{{ form.get("x")?.value | date }}</div>
+        <div>
+          Last weigh-in: {{ data().data[0].dataPoints.at(-1)?.x | date }}
+        </div>
       </div>
       <!-- <div class="sep"></div> -->
 
@@ -135,7 +138,7 @@
           }
         </dialog>
         <!-- <a class="test">⚙</a> -->
-        <a class="click" (click)="showDialog(config)">⚙</a>
+        <!-- <a class="click" (click)="showDialog(config)">⚙</a> -->
       </div>
     </div>
     <!-- <pre>{{ projected() | json }}</pre> -->

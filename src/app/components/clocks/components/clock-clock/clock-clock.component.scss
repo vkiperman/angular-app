@@ -4,14 +4,14 @@
   background-color: black;
   padding: 32px;
   border-radius: 24px;
-}
-.face {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+  .face {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
 
-.divider {
-  font-size: 78px;
-  color: #ffffff66;
+  .divider {
+    font-size: 78px;
+    color: #ffffff66;
+  }
 }

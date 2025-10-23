@@ -1,18 +1,21 @@
 <div class="digital-clock container">
   <div class="face">
+    <label [class]="{ on: check24.checked }">
+      <input type="checkbox" (click)="setHour12($event)" #check24 />
+      Switch to {{ check24.checked ? 24 : 12 }} Hr
+    </label>
     @if (time$ | async; as time) {
-      <label>
-        <input type="checkbox" (click)="setHour12($event)" #check24 />
-        Switch to {{ check24.checked ? "24" : "12" }} Hr
-      </label>
-      <digit [value]="+time.h[0]" />
-      <digit [value]="+time.h[1]" />
-      <div class="divider">:</div>
-      <digit [value]="+time.m[0]" />
-      <digit [value]="+time.m[1]" />
-      <div class="divider">:</div>
-      <digit [value]="+time.s[0]" />
-      <digit [value]="+time.s[1]" />
+      @for (val of time.h; track $index) {
+        <digit [value]="+val" />
+      }
+      <div class="divider"></div>
+      @for (val of time.m; track $index) {
+        <digit [value]="+val" />
+      }
+      <div class="divider"></div>
+      @for (val of time.s; track $index) {
+        <digit [value]="+val" />
+      }
       <pre class="period">{{
         time.period ? "•" + time.period : "&nbsp;&nbsp;&nbsp;"
       }}</pre>
