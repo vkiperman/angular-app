@@ -3,10 +3,16 @@ import { Component } from '@angular/core';
 import { ClockClockComponent } from './components/clock-clock/clock-clock.component';
 import { DigitalClockComponent } from './components/digital-clock/digital-clock.component';
 import { DotClockComponent } from './components/dot-clock/dot-clock.component';
+import { SpeedometerComponent } from './components/speedometer/speedometer.component';
 
 @Component({
   selector: 'clocks',
-  imports: [DotClockComponent, ClockClockComponent, DigitalClockComponent],
+  imports: [
+    DotClockComponent,
+    ClockClockComponent,
+    DigitalClockComponent,
+    SpeedometerComponent,
+  ],
   templateUrl: './clocks.component.html',
   styleUrl: './clocks.component.scss',
 })

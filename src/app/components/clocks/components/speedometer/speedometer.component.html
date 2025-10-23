@@ -1,0 +1,19 @@
+<div class="container">
+  @if (time$ | async; as time) {
+    <div class="face">
+      <digit [max]="2" [value]="time.h[0]" />
+      <digit [max]="10" [value]="time.h[1]" />
+      <div class="divider"></div>
+
+      <digit [max]="6" [value]="time.m[0]" />
+      <digit [max]="10" [value]="time.m[1]" />
+      <div class="divider"></div>
+
+      <digit [max]="6" [value]="time.s[0]" />
+      <digit [max]="10" [value]="time.s[1]" />
+      <div class="dot"></div>
+      <sub-seconds />
+    </div>
+    <blinker [valueRef]="time.s[1]" />
+  }
+</div>

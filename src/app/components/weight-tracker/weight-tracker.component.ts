@@ -30,6 +30,7 @@ import { DynamicRangeInputComponent } from './components/dynamic-range-input/dyn
 import { StatsComponent } from './components/stats/stats.component';
 import { WeightTrackerConfigState } from './store/weight-tracker-config.reducer';
 import { WeightTrackerConfigStore } from './store/weight-tracker-config.store';
+import { ItemClickEvent } from './weight-tracker.types';
 import {
   fillLinearDaily,
   getHSLA,
@@ -59,7 +60,6 @@ export class WeightTrackerComponent implements OnInit {
   private store = inject(WeightTrackerConfigStore);
   public weightTrackerConfig = signal<WeightTrackerConfigState | null>(null);
   public weightTrackerConfig$!: Observable<WeightTrackerConfigState>;
-
   public form = new FormGroup({
     x: new FormControl<Date>(
       new Date(
@@ -71,11 +71,9 @@ export class WeightTrackerComponent implements OnInit {
     y: new FormControl<number | null>(null),
     // w: new FormControl(new Date().getDay() < 1 || new Date().getDay() > 5),
   });
-
   public dynamicRange = new FormGroup({
     range: new FormControl(),
   });
-
   public weekdays = [
     'Select One',
     'Sunday',
@@ -86,20 +84,16 @@ export class WeightTrackerComponent implements OnInit {
     'Friday',
     'Saturday',
   ].map((label, value) => ({ value: value - 1, label }));
-
   public legend: { color: string; label: string }[] = this.weekdays
     .slice(1)
     .map(({ label }, i) => ({
       label,
       color: getHSLA(i),
     }));
-
   public byWeekday!: FormGroup;
   public byWeekday$!: Observable<number>;
-
   public configForm!: FormGroup;
   public configForm$!: Observable<{ projectionSampleSize: number }>;
-
   private weightData = signal<WeightData[]>([]);
 
   public readonly projected = signal(
@@ -113,6 +107,10 @@ export class WeightTrackerComponent implements OnInit {
 
   @ViewChild(CanvasJSChart)
   public canvasJSChart!: CanvasJSChart;
+
+  private get weightMultiplier() {
+    return this.weightTrackerConfig()?.units ? 0.453592 : 1;
+  }
 
   public ngOnInit(): void {
     this.weightTrackerConfig$ = this.store.getState().pipe(
@@ -157,10 +155,6 @@ export class WeightTrackerComponent implements OnInit {
         localStorage.getItem(storageItemName)!,
       );
     }, 0);
-  }
-
-  private get weightMultiplier() {
-    return this.weightTrackerConfig()?.units ? 0.453592 : 1;
   }
 
   private init() {
@@ -275,7 +269,7 @@ export class WeightTrackerComponent implements OnInit {
       showInLegend: true,
       title: {
         text: 'Weight Tracker',
-        fontFamily: 'Roboto, Helvetica, Verdana, Monospace',
+        fontFamily: 'Roboto Condensed, Helvetica, Verdana, Monospace',
         padding: 8,
         dockInsidePlotArea: false,
         textAlign: 'left',
@@ -291,7 +285,7 @@ export class WeightTrackerComponent implements OnInit {
       legend: {
         cursor: 'pointer',
         fontSize: 12,
-        itemclick: this.itemclick.bind(this),
+        itemclick: this.itemClick.bind(this),
       },
       toolTip: {
         shared: false,
@@ -308,7 +302,7 @@ export class WeightTrackerComponent implements OnInit {
           dataPoints: this.weightData().map((w) => ({
             ...w,
             color: getHSLA(w.x.getDay(), w.filledIn ? 0.2 : 1),
-            click: this.handleChartClick.bind(this),
+            // click: this.handleChartClick.bind(this),
           })),
         },
         {
@@ -337,24 +331,15 @@ export class WeightTrackerComponent implements OnInit {
     };
   });
 
-  public handleChartClick(e: any) {
-    console.log(e);
-  }
+  // public handleChartClick(e: any) {
+  // console.log(e);
+  // }
 
   public handleChartReady(chart: object) {
     (chart as { render: () => void }).render();
   }
 
-  private itemclick(e: {
-    dataSeriesIndex: number;
-    dataSeries: { visible: boolean; name: string };
-    chart: {
-      data: {
-        options: { visible: boolean };
-      }[];
-      render: () => void;
-    };
-  }) {
+  private itemClick(e: ItemClickEvent) {
     const visible = e.dataSeries.visible === undefined || e.dataSeries.visible;
 
     this.visible[e.dataSeriesIndex] = !visible;

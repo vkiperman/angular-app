@@ -13,30 +13,89 @@
       transform: skewX(-5deg);
 
       .divider {
-        font-size: 60px;
-        color: rgba(255, 0, 0, 0.9);
-        text-shadow:
-          0 0 3px red,
-          1px 1px 3px red,
-          0 0 3px red;
+        &::after {
+          content: ":";
+          font-size: 60px;
+          color: rgba(255, 0, 0, 0.9);
+          text-shadow:
+            0 0 3px red,
+            1px 1px 3px red,
+            0 0 3px red;
+        }
       }
       .period {
+        animation: period-animation 2s infinite;
         color: rgba(255, 0, 0, 0.9);
         font-size: 20px;
         align-self: last baseline;
+      }
+
+      label {
+        background-color: red;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-weight: bold;
+        align-self: last baseline;
+        transition:
+          background-color 0.5s,
+          color 0.5s;
+        &.on {
+          background-color: rgba(255, 0, 0, 0.542);
+          color: rgba(255, 255, 255, 0.78);
+        }
+        input {
+          display: none;
+        }
+        user-select: none;
       }
     }
   }
 }
 
-label {
-  background-color: red;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 8px;
-  font-weight: bold;
-  align-self: last baseline;
-  input {
-    display: none;
+@keyframes period-animation {
+  0% {
+    text-shadow:
+      0 0 1px red,
+      -1px 1px 3px red,
+      0 0 1px red,
+      0 -1px 2px red,
+      0 0 1px red;
+  }
+  10% {
+    text-shadow:
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red;
+  }
+  20% {
+    text-shadow:
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red;
+  }
+  50% {
+    text-shadow:
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red;
+  }
+  70% {
+    text-shadow:
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red;
+  }
+  100% {
+    text-shadow:
+      0 0 1px red,
+      1px 1px 3px red,
+      0 0 1px red,
+      0 0 1px red,
+      0 0 1px red;
   }
 }

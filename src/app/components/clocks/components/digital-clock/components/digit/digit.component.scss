@@ -1,44 +1,29 @@
-table tr td {
-  width: 4px;
-  border-radius: 99vw;
+table tr {
+  &:nth-child(even) td {
+    height: 40px;
+  }
 
-  transition:
-    background-color 0.5s,
-    box-shadow 0.5s;
-}
+  &:nth-child(odd) td {
+    height: 4px;
+  }
 
-table tr:nth-child(1) td {
-  height: 4px;
-}
+  td {
+    width: 4px;
+    border-radius: 99vw;
+    transition:
+      background-color 0.5s,
+      box-shadow 0.5s;
 
-table tr:nth-child(2) td {
-  height: 40px;
-}
+    &:nth-child(2) {
+      width: 40px !important;
+    }
 
-table tr:nth-child(3) td {
-  height: 4px;
-}
-
-table tr:nth-child(4) td {
-  height: 40px;
-}
-
-table tr:nth-child(5) td {
-  height: 4px;
-}
-
-table tr td:nth-child(2) {
-  width: 40px !important;
-}
-
-.on {
-  background-color: red;
-  box-shadow: 0 0 8px 2px red;
-}
-.off {
-  background-color: transparent;
-}
-
-.on.top {
-  border-top: 4px solid red;
+    &.on {
+      background-color: red;
+      box-shadow: 0 0 8px 2px red;
+    }
+    &.off {
+      background-color: transparent;
+    }
+  }
 }

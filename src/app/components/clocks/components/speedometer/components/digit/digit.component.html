@@ -1,0 +1,13 @@
+<div class="digit">
+  <div
+    class="dial"
+    [style]="'--placement:' + computedValue() + 'px; --rate:' + rate()"
+    [class.with-transition]="hasTransition()"
+    (transitionend)="transitionEndHandler($event)"
+  >
+    @for (number of numbers(); track $index) {
+      <div class="number">{{ number }}</div>
+    }
+  </div>
+  <div class="shadow"></div>
+</div>

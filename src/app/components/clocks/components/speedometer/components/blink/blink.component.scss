@@ -1,0 +1,11 @@
+.blinker {
+  width: 8px;
+  aspect-ratio: 1 / 1;
+  background-color: transparent;
+  border-radius: 99vw;
+
+  &.blink {
+    background-color: white;
+    box-shadow: 0 0 4px 2px white;
+  }
+}
