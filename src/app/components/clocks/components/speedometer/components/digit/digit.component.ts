@@ -1,11 +1,13 @@
 import {
   Component,
   computed,
+  inject,
   input,
   numberAttribute,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { SpeedometerService } from '../../services/speedometer.service';
 
 @Component({
   selector: 'digit',
@@ -15,6 +17,13 @@ import {
   encapsulation: ViewEncapsulation.Emulated,
 })
 export class DigitComponent {
+  private svc = inject(SpeedometerService);
+  private get click() {
+    const audio = new Audio('/assets/click.mp3');
+    audio.load();
+    audio.volume = 0.2;
+    return audio;
+  }
   public hasTransition = signal(true);
   public max = input(10);
   public value = input(0, {
@@ -48,6 +57,7 @@ export class DigitComponent {
   );
 
   public transitionEndHandler(e: TransitionEvent) {
+    this.svc.isSoundOn() && this.click.play();
     this.value() === this.max()
       ? setTimeout(() => this.hasTransition.set(false), this.resetRate())
       : this.hasTransition.set(true);
