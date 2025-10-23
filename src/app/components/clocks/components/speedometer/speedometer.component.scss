@@ -7,6 +7,12 @@
   border-radius: 24px;
   gap: 16px;
 }
+
+label {
+  input[type="checkbox"] {
+    display: none;
+  }
+}
 .face {
   display: flex;
   gap: 1px;

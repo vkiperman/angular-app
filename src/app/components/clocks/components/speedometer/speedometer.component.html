@@ -1,5 +1,13 @@
 <div class="container">
   @if (time$ | async; as time) {
+    <label>
+      @if (isSoundOn) {
+        <span>🔊</span>
+      } @else {
+        <span>🔇</span>
+      }
+      <input type="checkbox" (input)="soundHandler($event)" />
+    </label>
     <div class="face">
       <digit [max]="2" [value]="time.h[0]" />
       <digit [max]="10" [value]="time.h[1]" />
